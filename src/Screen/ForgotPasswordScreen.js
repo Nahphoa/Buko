@@ -1,45 +1,60 @@
-import { StyleSheet, Text, TextInput, TouchableOpacity, View, KeyboardAvoidingView, Platform } from 'react-native';
-import React from 'react';
+import { StyleSheet, Text, TextInput, TouchableOpacity, View, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, Alert } from 'react-native';
+import React, { useState } from 'react';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const ForgotPasswordScreen = ({ navigation }) => {
+  const [email, setEmail] = useState('');
+
+  const handlePasswordReset = () => {
+    if (!email) {
+      Alert.alert("Error", "Please enter your email address.");
+      return;
+    }
+    // Placeholder action (replace with actual API call)
+    Alert.alert("Success", "Password reset link sent to your email!");
+  };
+
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
-      <View style={styles.innerContainer}>
-        {/* Back Button */}
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back-outline" size={30} color="#003580" />
-        </TouchableOpacity>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.container}
+      >
+        <View style={styles.innerContainer}>
+          {/* Back Button */}
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Ionicons name="arrow-back-outline" size={30} color="#003580" />
+          </TouchableOpacity>
 
-        {/* Heading */}
-        <Text style={styles.heading}>Forgot Password?</Text>
+          {/* Heading */}
+          <Text style={styles.heading}>Forgot Password?</Text>
 
-        {/* Subheading */}
-        <Text style={styles.subheading}>
-          Please enter your email address. You will receive a link to create a new password via email.
-        </Text>
+          {/* Subheading */} 
+          <Text style={styles.subheading}>
+            Please enter your email address. You will receive a link to create a new password via email.
+          </Text>
 
-        {/* Email Input */}
-        <View style={styles.inputContainer}>
-          <Ionicons name="mail-outline" size={24} color="#003580" style={styles.icon} />
-          <TextInput
-            style={styles.textInput}
-            placeholder="Enter your email"
-            placeholderTextColor="#999"
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
+          {/* Email Input */}
+          <View style={styles.inputContainer}>
+            <Ionicons name="mail-outline" size={24} color="#003580" style={styles.icon} />
+            <TextInput
+              style={styles.textInput}
+              placeholder="Enter your email"
+              placeholderTextColor="#999"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={email}
+              onChangeText={setEmail}
+            />
+          </View>
+
+          {/* Reset Password Button */}
+          <TouchableOpacity style={styles.button} onPress={handlePasswordReset}>
+            <Text style={styles.buttonText}>Reset Password</Text>
+          </TouchableOpacity>
         </View>
-
-        {/* Reset Password Button */}
-        <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>Reset Password</Text>
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </TouchableWithoutFeedback>
   );
 };
 

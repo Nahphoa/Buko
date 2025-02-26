@@ -13,7 +13,6 @@ import LoginScreen from './src/Screen/LoginScreen';
 import SignUpScreen from './src/Screen/SignUpScreen';
 import ForgotPasswordScreen from './src/Screen/ForgotPasswordScreen';
 
-
 const StackNavigator = () => {
     const Stack = createNativeStackNavigator();
     const MyTabs = createBottomTabNavigator();

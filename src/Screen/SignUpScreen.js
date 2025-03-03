@@ -1,9 +1,67 @@
-import { StyleSheet, Text, TextInput, TouchableOpacity, View, Image, KeyboardAvoidingView, Platform } from 'react-native';
+import { StyleSheet, Text, TextInput, TouchableOpacity, View, Image, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import React from 'react';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import FontAwesome from 'react-native-vector-icons/FontAwesome'; // For Facebook and Google icons
+import { auth } from '../firebaseConfig';
+import { createUserWithEmailAndPassword, PhoneAuthProvider, signInWithCredential } from "firebase/auth";
+import { useState } from 'react';
 
 const SignUpScreen = ({ navigation }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [verificationId, setVerificationId] = useState(null);
+
+  console.log("Firebase Auth:", auth);
+
+  const handleEmailSignUp = () => {
+    if (!email || !password) {
+      Alert.alert("Error", "Please fill in all fields!");
+      return;
+    }
+
+    createUserWithEmailAndPassword(auth, email, password)
+      .then((userCredentials) => {
+        Alert.alert("Success", "Account created successfully!");
+        navigation.navigate('Login'); // Redirect to login screen
+      })
+      .catch((error) => Alert.alert("Sign-up Error", error.message));
+  };
+
+  const sendOTP = async () => {
+    if (!phoneNumber) {
+      Alert.alert("Error", "Please enter a valid phone number!");
+      return;
+    }
+
+    try {
+      const phoneProvider = new PhoneAuthProvider(auth);
+      const verificationId = await phoneProvider.verifyPhoneNumber(phoneNumber, null);
+      setVerificationId(verificationId);
+      Alert.alert("OTP Sent", "A verification code has been sent to your phone.");
+    } catch (error) {
+      Alert.alert("Error", error.message);
+    }
+  };
+
+  // Verify OTP for Phone Sign-Up
+  const verifyOTP = async () => {
+    if (!verificationCode) {
+      Alert.alert("Error", "Please enter the OTP code!");
+      return;
+    }
+
+    try {
+      const credential = PhoneAuthProvider.credential(verificationId, verificationCode);
+      await signInWithCredential(auth, credential);
+      Alert.alert("Success", "Phone number verified! Account created.");
+      navigation.navigate('Login'); // Redirect to login screen
+    } catch (error) {
+      Alert.alert("Error", error.message);
+    }
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -31,6 +89,8 @@ const SignUpScreen = ({ navigation }) => {
             placeholderTextColor="#999"
             keyboardType="email-address"
             autoCapitalize="none"
+            value={email}
+            onChangeText={setEmail}
           />
         </View>
 
@@ -43,6 +103,8 @@ const SignUpScreen = ({ navigation }) => {
             placeholderTextColor="#999"
             secureTextEntry={true}
             autoCapitalize="none"
+            value={password}
+            onChangeText={setPassword}
           />
         </View>
 
@@ -60,11 +122,13 @@ const SignUpScreen = ({ navigation }) => {
             placeholderTextColor="#999"
             keyboardType="phone-pad"
             autoCapitalize="none"
+            value={phoneNumber}
+            onChangeText={setPhoneNumber}
           />
         </View>
 
         {/* Sign Up Button */}
-        <TouchableOpacity style={styles.button}>
+        <TouchableOpacity style={styles.button} onPress={handleEmailSignUp}>
           <Text style={styles.buttonText}>Sign Up</Text>
         </TouchableOpacity>
 

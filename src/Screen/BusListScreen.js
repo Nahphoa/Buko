@@ -14,6 +14,7 @@ export default class BusListScreen extends Component {
 
   render() {
     const { busData } = this.props.route.params; // Get busData from navigation params
+    console.log('Received busData:', busData); // Debug log
 
     return (
       <View style={styles.container}>

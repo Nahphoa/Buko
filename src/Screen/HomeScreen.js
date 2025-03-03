@@ -1,42 +1,53 @@
-import React, { useState } from 'react';
-import { Image, StyleSheet, Text, TouchableOpacity, View, KeyboardAvoidingView, Platform, Modal, Alert } from 'react-native';
-import { Calendar } from 'react-native-calendars'; // Import Calendar
-import Ionicons from 'react-native-vector-icons/Ionicons'; // Import Ionicons for the calendar icon
+import React, { useState, useEffect } from 'react';
+import {
+  Image, StyleSheet, Text, TouchableOpacity, View, KeyboardAvoidingView,
+  Platform, Modal, Alert
+} from 'react-native';
+import { Calendar } from 'react-native-calendars';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const HomeScreen = ({ navigation, route }) => {
   const [from, setFrom] = useState(route.params?.from || '');
   const [to, setTo] = useState(route.params?.to || '');
   const [date, setDate] = useState('');
-  const [isCalendarVisible, setCalendarVisible] = useState(false); // State to control calendar visibility
+  const [isCalendarVisible, setCalendarVisible] = useState(false);
 
-  // Function to handle search
+  useEffect(() => {
+    console.log('Received route.params:', route.params); // Debugging
+    if (route.params?.from) setFrom(route.params.from);
+    if (route.params?.to) setTo(route.params.to);
+  }, [route.params?.from, route.params?.to]);
+
   const handleSearch = () => {
-    if (!from || !to || !date) {
-      Alert.alert('Error', 'Please fill in all fields');
+    if (!from.trim() || !to.trim() || !date.trim()) {
+      Alert.alert(
+        'Error',
+        'Please fill in all fields:\n\n' +
+        `From: ${from || 'Not selected'}\n` +
+        `To: ${to || 'Not selected'}\n` +
+        `Date: ${date || 'Not selected'}`
+      );
       return;
     }
 
-    // Mock data for testing
     const mockBusData = [
       { id: 1, busName: 'Bus A', departureTime: '10:00 AM', from, to, date },
       { id: 2, busName: 'Bus B', departureTime: '12:00 PM', from, to, date },
       { id: 3, busName: 'Bus C', departureTime: '02:00 PM', from, to, date },
     ];
 
-    // Navigate to BusListScreen with the search results
-    navigation.navigate('BusListScreen', { busData: mockBusData });
+    navigation.navigate('SearchBusScreen', { busData: mockBusData, from, to, date });
   };
 
-  // Function to handle date selection from the calendar
   const handleDateSelect = (day) => {
-    setDate(day.dateString); // Update the selected date
-    setCalendarVisible(false); // Close the calendar
+    setDate(day.dateString);
+    setCalendarVisible(false);
   };
 
-  // Function to format the date as DD/MM/YYYY
   const formatDate = (dateString) => {
-    const [year, month, day] = dateString.split('-');
-    return `${day}/${month}/${year}`;
+    if (!dateString) return 'Date of Travel (DD/MM/YYYY)';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB');
   };
 
   return (
@@ -45,73 +56,84 @@ const HomeScreen = ({ navigation, route }) => {
       style={styles.container}
     >
       <View style={styles.innerContainer}>
-        {/* Logo */}
         <Image source={require("../assets/logo.png")} style={styles.logo} />
 
-        {/* FROM FIELD */}
+        {/* From Field */}
         <TouchableOpacity
           style={styles.input}
-          onPress={() => navigation.navigate('SelectRouteScreen', { type: 'from' })}
+          onPress={() => {
+            console.log('Navigating to SelectRouteScreen with:', { type: 'from', from, to }); // Debugging
+            navigation.navigate('SelectRouteScreen', { type: 'from', from, to });
+          }}
         >
           <Text>{from || 'From'}</Text>
         </TouchableOpacity>
 
-        {/* TO FIELD */}
+        {/* To Field */}
         <TouchableOpacity
           style={styles.input}
-          onPress={() => navigation.navigate('SelectRouteScreen', { type: 'to' })}
+          onPress={() => {
+            console.log('Navigating to SelectRouteScreen with:', { type: 'to', from, to }); // Debugging
+            navigation.navigate('SelectRouteScreen', { type: 'to', from, to });
+          }}
         >
           <Text>{to || 'To'}</Text>
         </TouchableOpacity>
 
-        {/* DATE FIELD */}
+        {/* Date Field */}
         <TouchableOpacity
           style={styles.input}
-          onPress={() => setCalendarVisible(true)} // Open the calendar on press
+          onPress={() => setCalendarVisible(true)}
         >
           <View style={styles.dateInputContent}>
-            <Text>{date ? formatDate(date) : 'Date of Travel (DD/MM/YYYY)'}</Text>
+            <Text>{formatDate(date)}</Text>
             <Ionicons name="calendar-outline" size={20} color="#003580" />
           </View>
         </TouchableOpacity>
 
-        {/* SEARCH BUS BUTTON */}
+        {/* Search Bus Button */}
         <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
           <Text style={styles.buttonText}>Search Bus</Text>
         </TouchableOpacity>
 
-        {/* ADDITIONAL BUTTONS */}
+        {/* Additional Buttons */}
         <View style={styles.additionalButtons}>
           <TouchableOpacity
             style={styles.button}
             onPress={() => navigation.navigate('Login')}
+            accessibilityLabel="Navigate to Login Screen"
           >
-            <Text>LogIn</Text>
+            <Text style={styles.buttonText}>LogIn</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.button}
             onPress={() => navigation.navigate('SignUp')}
+            accessibilityLabel="Navigate to Sign Up Screen"
           >
-            <Text>SignUp</Text>
+            <Text style={styles.buttonText}>SignUp</Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* CALENDAR MODAL */}
+      {/* Calendar Modal */}
       <Modal
         visible={isCalendarVisible}
         transparent
         animationType="slide"
         onRequestClose={() => setCalendarVisible(false)}
       >
-        <View style={styles.modalContainer}>
+        <TouchableOpacity
+          style={styles.modalBackdrop}
+          activeOpacity={1}
+          onPress={() => setCalendarVisible(false)}
+        >
           <View style={styles.calendarContainer}>
             <Calendar
-              onDayPress={handleDateSelect} // Handle date selection
+              onDayPress={handleDateSelect}
               markedDates={{
-                [date]: { selected: true, selectedColor: '#003580' }, // Highlight the selected date
+                [date]: { selected: true, selectedColor: '#003580' },
               }}
-              minDate={new Date().toISOString().split('T')[0]} // Disable past dates
+              minDate={new Date().toISOString().split('T')[0]}
             />
             <TouchableOpacity
               style={styles.closeButton}
@@ -120,7 +142,7 @@ const HomeScreen = ({ navigation, route }) => {
               <Text style={styles.closeButtonText}>Close</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </TouchableOpacity>
       </Modal>
     </KeyboardAvoidingView>
   );
@@ -188,11 +210,11 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     alignItems: 'center',
   },
-  modalContainer: {
+  modalBackdrop: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   calendarContainer: {
     backgroundColor: '#fff',

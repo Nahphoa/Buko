@@ -1,9 +1,64 @@
-import { StyleSheet, Text, TextInput, TouchableOpacity, View, Image, KeyboardAvoidingView, Platform } from 'react-native';
+import { StyleSheet, Text, TextInput, TouchableOpacity, View, Image, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import React from 'react';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import FontAwesome from 'react-native-vector-icons/FontAwesome'; // For Facebook and Google icons
+import { auth } from '../firebaseConfig';
+import { signInWithEmailAndPassword, PhoneAuthProvider, signInWithCredential } from "firebase/auth";
+import { useState } from 'react';
 
 const LoginScreen = ({ navigation }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [verificationId, setVerificationId] = useState(null);
+
+  const handleEmailLogin = () => {
+    if (!email || !password) {
+      Alert.alert("Error", "Please fill in all fields!");
+      return;
+    }
+
+    signInWithEmailAndPassword(auth, email, password)
+      .then(() => {
+        Alert.alert("Success", "Logged in with email!");
+        navigation.navigate('Home'); // Redirect to home screen or any other screen
+      })
+      .catch((error) => Alert.alert("Error", error.message));
+  };
+
+  const sendOTP = async () => {
+    if (!phoneNumber) {
+      Alert.alert("Error", "Please enter a valid phone number!");
+      return;
+    }
+
+    try {
+      const phoneProvider = new PhoneAuthProvider(auth);
+      const verificationId = await phoneProvider.verifyPhoneNumber(phoneNumber, null);
+      setVerificationId(verificationId);
+      Alert.alert("OTP Sent", "A verification code has been sent to your phone.");
+    } catch (error) {
+      Alert.alert("Error", error.message);
+    }
+  };
+
+  const verifyOTP = async () => {
+    if (!verificationCode) {
+      Alert.alert("Error", "Please enter the OTP code!");
+      return;
+    }
+
+    try {
+      const credential = PhoneAuthProvider.credential(verificationId, verificationCode);
+      await signInWithCredential(auth, credential);
+      Alert.alert("Success", "Logged in with phone!");
+      navigation.navigate('Home'); // Redirect to home screen or any other screen
+    } catch (error) {
+      Alert.alert("Error", error.message);
+    }
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -34,6 +89,8 @@ const LoginScreen = ({ navigation }) => {
             placeholderTextColor="#999"
             keyboardType="email-address"
             autoCapitalize="none"
+            value={email}
+            onChangeText={setEmail}
           />
         </View>
 
@@ -46,6 +103,8 @@ const LoginScreen = ({ navigation }) => {
             placeholderTextColor="#999"
             secureTextEntry={true}
             autoCapitalize="none"
+            value={password}
+            onChangeText={setPassword}
           />
         </View>
 
@@ -55,7 +114,7 @@ const LoginScreen = ({ navigation }) => {
         </TouchableOpacity>
 
         {/* Login Button */}
-        <TouchableOpacity style={styles.button}>
+        <TouchableOpacity style={styles.button} onPress={handleEmailLogin}>
           <Text style={styles.buttonText}>Login</Text>
         </TouchableOpacity>
 

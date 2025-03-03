@@ -14,6 +14,7 @@ import SignUpScreen from './src/Screen/SignUpScreen';
 import ForgotPasswordScreen from './src/Screen/ForgotPasswordScreen';
 import SelectRouteScreen from './src/Screen/SelectRouteScreen';
 import BusListScreen from './src/Screen/BusListScreen'; // Import BusListScreen
+import SearchBusScreen from './src/Screen/SearchBusScreen';
 
 // Create bottom tab navigator
 const MyTabs = createBottomTabNavigator();
@@ -112,6 +113,11 @@ const StackNavigator = () => {
         <Stack.Screen
           name="BusListScreen"
           component={BusListScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="SearchBusScreen"
+          component={SearchBusScreen}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>

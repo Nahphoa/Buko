@@ -11,6 +11,11 @@ const BusListScreen = ({ route }) => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>
+
+
+
+
+        
         Buses from {from} to {to} on {selectedDate}
       </Text>
 
@@ -30,7 +35,7 @@ const BusListScreen = ({ route }) => {
           )}
         />
       ) : (
-        <Text style={styles.noBusText}>No buses available for this route</Text>
+        <Text style={styles.noBusText}>Please select the Routes</Text>
       )}
     </View>
   );

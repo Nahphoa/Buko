@@ -1,29 +1,51 @@
 import React, { Component } from 'react';
-import { Text, StyleSheet, View, FlatList } from 'react-native';
+import { Text, StyleSheet, View, FlatList, TouchableOpacity } from 'react-native';
 
 export default class BusListScreen extends Component {
+  // Function to handle bus selection
+  handleBusSelect = (bus) => {
+    console.log('Selected Bus:', bus); // Debugging
+    this.props.navigation.navigate('SeatSelectionScreen', {
+      busId: bus.id,
+      from: bus.from,
+      to: bus.to,
+      date: bus.date,
+      busDetails: bus,
+    });
+  };
+
+  // Render each bus item
   renderBusItem = ({ item }) => (
-    <View style={styles.busItem}>
+    <TouchableOpacity
+      style={styles.busItem}
+      onPress={() => this.handleBusSelect(item)} // Make the bus item selectable
+    >
       <Text style={styles.busName}>{item.busName}</Text>
       <Text style={styles.busDetails}>Departure: {item.departureTime}</Text>
       <Text style={styles.busDetails}>From: {item.from}</Text>
       <Text style={styles.busDetails}>To: {item.to}</Text>
       <Text style={styles.busDetails}>Date: {item.date}</Text>
-    </View>
+    </TouchableOpacity>
   );
 
   render() {
     const { busData } = this.props.route.params; // Get busData from navigation params
     console.log('Received busData:', busData); // Debug log
 
+    // Ensure each bus has a unique key
+    const uniqueBusData = busData.map((bus, index) => ({
+      ...bus,
+      uniqueId: `${bus.id}-${index}`, // Create a unique ID for each bus
+    }));
+
     return (
       <View style={styles.container}>
         <Text style={styles.header}>Available Buses</Text>
         {busData.length > 0 ? (
           <FlatList
-            data={busData}
+            data={uniqueBusData} // Use the modified busData with unique IDs
             renderItem={this.renderBusItem}
-            keyExtractor={(item) => item.id.toString()}
+            keyExtractor={(item) => item.uniqueId} // Use the uniqueId as the key
           />
         ) : (
           <Text style={styles.noBusesText}>No buses available</Text>

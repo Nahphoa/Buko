@@ -16,6 +16,24 @@ const SearchBusScreen = ({ route }) => {
     return `${day}/${month}/${year}`;
   };
 
+  // Ensure each bus has a unique key
+  const uniqueBusData = busData.map((bus, index) => ({
+    ...bus,
+    uniqueId: `${bus.id}-${index}`, // Create a unique ID for each bus
+  }));
+
+  // Function to handle bus selection
+  const handleBusSelect = (bus) => {
+    console.log('Selected Bus:', bus); // Debugging
+    navigation.navigate('SeatSelectionScreen', {
+      busId: bus.id,
+      from,
+      to,
+      date,
+      busDetails: bus,
+    });
+  };
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -34,16 +52,19 @@ const SearchBusScreen = ({ route }) => {
       {/* Bus List */}
       {busData.length > 0 ? (
         <FlatList
-          data={busData}
-          keyExtractor={(item) => item.id.toString()}
+          data={uniqueBusData} // Use the modified busData with unique IDs
+          keyExtractor={(item) => item.uniqueId} // Use the uniqueId as the key
           renderItem={({ item }) => (
-            <View style={styles.busItem}>
+            <TouchableOpacity
+              style={styles.busItem}
+              onPress={() => handleBusSelect(item)} // Make the bus item selectable
+            >
               <Text style={styles.busName}>{item.busName}</Text>
               <Text style={styles.busInfo}>Departure: {item.departureTime}</Text>
               <Text style={styles.busInfo}>From: {item.from}</Text>
               <Text style={styles.busInfo}>To: {item.to}</Text>
               <Text style={styles.busInfo}>Date: {formatDate(item.date)}</Text>
-            </View>
+            </TouchableOpacity>
           )}
         />
       ) : (

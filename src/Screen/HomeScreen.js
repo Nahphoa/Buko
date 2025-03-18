@@ -1,24 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Image, StyleSheet, Text, TouchableOpacity, View, KeyboardAvoidingView,
-  Platform, Modal, Alert
+  Platform, Modal, Alert, ActivityIndicator
 } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import busData from './Data/busdata';
 
 const HomeScreen = ({ navigation, route }) => {
   const [from, setFrom] = useState(route.params?.from || '');
   const [to, setTo] = useState(route.params?.to || '');
   const [date, setDate] = useState('');
   const [isCalendarVisible, setCalendarVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
+  // Update 'from' and 'to' states when route.params change
   useEffect(() => {
     console.log('Received route.params:', route.params); // Debugging
     if (route.params?.from) setFrom(route.params.from);
     if (route.params?.to) setTo(route.params.to);
   }, [route.params?.from, route.params?.to]);
 
-  const handleSearch = () => {
+  // Handle search button press
+  const handleSearch = useCallback(() => {
     if (!from.trim() || !to.trim() || !date.trim()) {
       Alert.alert(
         'Error',
@@ -30,25 +34,34 @@ const HomeScreen = ({ navigation, route }) => {
       return;
     }
 
-    const mockBusData = [
-      { id: 1, busName: 'Bus A', departureTime: '10:00 AM', from, to, date },
-      { id: 2, busName: 'Bus B', departureTime: '12:00 PM', from, to, date },
-      { id: 3, busName: 'Bus C', departureTime: '02:00 PM', from, to, date },
-    ];
+    setIsLoading(true);
 
-    navigation.navigate('SearchBusScreen', { busData: mockBusData, from, to, date });
-  };
+    // Simulate an API call or data processing
+    setTimeout(() => {
+      // Filter busData based on from, to, and date
+      const filteredBusData = busData
+        .filter((route) => route.from === from && route.to === to)
+        .flatMap((route) => route.buses.map((bus) => ({ ...bus, from, to, date })));
 
-  const handleDateSelect = (day) => {
+      console.log('Filtered busData:', filteredBusData); // Debugging
+
+      setIsLoading(false);
+      navigation.navigate('SearchBusScreen', { busData: filteredBusData, from, to, date });
+    }, 1000); // Simulate 1-second delay
+  }, [from, to, date, navigation]);
+
+  // Handle date selection from the calendar
+  const handleDateSelect = useCallback((day) => {
     setDate(day.dateString);
     setCalendarVisible(false);
-  };
+  }, []);
 
-  const formatDate = (dateString) => {
+  // Format date for display
+  const formatDate = useMemo(() => (dateString) => {
     if (!dateString) return 'Date of Travel (DD/MM/YYYY)';
     const date = new Date(dateString);
     return date.toLocaleDateString('en-GB');
-  };
+  }, []);
 
   return (
     <KeyboardAvoidingView
@@ -61,10 +74,9 @@ const HomeScreen = ({ navigation, route }) => {
         {/* From Field */}
         <TouchableOpacity
           style={styles.input}
-          onPress={() => {
-            console.log('Navigating to SelectRouteScreen with:', { type: 'from', from, to }); // Debugging
-            navigation.navigate('SelectRouteScreen', { type: 'from', from, to });
-          }}
+          onPress={() => navigation.navigate('SelectRouteScreen', { type: 'from', from, to })}
+          accessibilityLabel="Select departure location"
+          accessibilityHint="Tap to select where you are traveling from"
         >
           <Text>{from || 'From'}</Text>
         </TouchableOpacity>
@@ -72,10 +84,9 @@ const HomeScreen = ({ navigation, route }) => {
         {/* To Field */}
         <TouchableOpacity
           style={styles.input}
-          onPress={() => {
-            console.log('Navigating to SelectRouteScreen with:', { type: 'to', from, to }); // Debugging
-            navigation.navigate('SelectRouteScreen', { type: 'to', from, to });
-          }}
+          onPress={() => navigation.navigate('SelectRouteScreen', { type: 'to', from, to })}
+          accessibilityLabel="Select destination location"
+          accessibilityHint="Tap to select where you are traveling to"
         >
           <Text>{to || 'To'}</Text>
         </TouchableOpacity>
@@ -84,6 +95,8 @@ const HomeScreen = ({ navigation, route }) => {
         <TouchableOpacity
           style={styles.input}
           onPress={() => setCalendarVisible(true)}
+          accessibilityLabel="Select travel date"
+          accessibilityHint="Tap to select the date of travel"
         >
           <View style={styles.dateInputContent}>
             <Text>{formatDate(date)}</Text>
@@ -92,8 +105,18 @@ const HomeScreen = ({ navigation, route }) => {
         </TouchableOpacity>
 
         {/* Search Bus Button */}
-        <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
-          <Text style={styles.buttonText}>Search Bus</Text>
+        <TouchableOpacity
+          style={styles.searchButton}
+          onPress={handleSearch}
+          disabled={isLoading}
+          accessibilityLabel="Search for buses"
+          accessibilityHint="Tap to search for available buses"
+        >
+          {isLoading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Search Bus</Text>
+          )}
         </TouchableOpacity>
 
         {/* Additional Buttons */}
@@ -138,6 +161,7 @@ const HomeScreen = ({ navigation, route }) => {
             <TouchableOpacity
               style={styles.closeButton}
               onPress={() => setCalendarVisible(false)}
+              accessibilityLabel="Close calendar"
             >
               <Text style={styles.closeButtonText}>Close</Text>
             </TouchableOpacity>

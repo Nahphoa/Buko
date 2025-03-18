@@ -2,27 +2,28 @@ import { StyleSheet, Text, View } from 'react-native';
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { NavigationContainer } from '@react-navigation/native';
 import HomeScreen from './src/Screen/HomeScreen';
 import BookingScreen from './src/Screen/BookingScreen';
 import ProfileScreen from './src/Screen/ProfileScreen';
 import Entypo from '@expo/vector-icons/Entypo';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { NavigationContainer } from '@react-navigation/native';
 import LoginScreen from './src/Screen/LoginScreen';
 import SignUpScreen from './src/Screen/SignUpScreen';
 import ForgotPasswordScreen from './src/Screen/ForgotPasswordScreen';
 import SelectRouteScreen from './src/Screen/SelectRouteScreen';
-import BusListScreen from './src/Screen/BusListScreen'; // Import BusListScreen
+import BusListScreen from './src/Screen/BusListScreen';
 import SearchBusScreen from './src/Screen/SearchBusScreen';
+import SeatSelectionScreen from './src/Screen/SeatSelectionScreen';
 
 // Create bottom tab navigator
-const MyTabs = createBottomTabNavigator();
+const Tab = createBottomTabNavigator();
 
-// BottomTabs component
+// BottomTabs component (integrated directly into StackNavigator)
 function BottomTabs() {
   return (
-    <MyTabs.Navigator
+    <Tab.Navigator
       screenOptions={{
         tabBarActiveTintColor: '#003580', // Active tab color
         tabBarInactiveTintColor: 'gray', // Inactive tab color
@@ -31,7 +32,7 @@ function BottomTabs() {
         },
       }}
     >
-      <MyTabs.Screen
+      <Tab.Screen
         name="Home"
         component={HomeScreen}
         options={{
@@ -45,7 +46,7 @@ function BottomTabs() {
             ),
         }}
       />
-      <MyTabs.Screen
+      <Tab.Screen
         name="Booking"
         component={BookingScreen}
         options={{
@@ -59,7 +60,7 @@ function BottomTabs() {
             ),
         }}
       />
-      <MyTabs.Screen
+      <Tab.Screen
         name="Profile"
         component={ProfileScreen}
         options={{
@@ -73,22 +74,25 @@ function BottomTabs() {
             ),
         }}
       />
-    </MyTabs.Navigator>
+    </Tab.Navigator>
   );
 }
 
 // StackNavigator component
-const StackNavigator = () => {
-  const Stack = createNativeStackNavigator();
+const Stack = createNativeStackNavigator();
 
+export default function StackNavigator() {
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Main">
+        {/* Main screen (BottomTabs) */}
         <Stack.Screen
           name="Main"
           component={BottomTabs}
           options={{ headerShown: false }}
         />
+
+        {/* Authentication screens */}
         <Stack.Screen
           name="Login"
           component={LoginScreen}
@@ -104,12 +108,13 @@ const StackNavigator = () => {
           component={ForgotPasswordScreen}
           options={{ headerShown: false }}
         />
+
+        {/* Other screens */}
         <Stack.Screen
           name="SelectRouteScreen"
           component={SelectRouteScreen}
           options={{ headerShown: false }}
         />
-        {/* Add BusListScreen to the stack navigator */}
         <Stack.Screen
           name="BusListScreen"
           component={BusListScreen}
@@ -120,11 +125,14 @@ const StackNavigator = () => {
           component={SearchBusScreen}
           options={{ headerShown: false }}
         />
+        <Stack.Screen
+          name="SeatSelectionScreen"
+          component={SeatSelectionScreen}
+          options={{ headerShown: false }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
-};
-
-export default StackNavigator;
+}
 
 const styles = StyleSheet.create({});

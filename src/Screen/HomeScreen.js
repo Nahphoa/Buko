@@ -14,14 +14,12 @@ const HomeScreen = ({ navigation, route }) => {
   const [isCalendarVisible, setCalendarVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Update 'from' and 'to' states when route.params change
   useEffect(() => {
-    console.log('Received route.params:', route.params); // Debugging
+    console.log('Received route.params:', route.params);
     if (route.params?.from) setFrom(route.params.from);
     if (route.params?.to) setTo(route.params.to);
   }, [route.params?.from, route.params?.to]);
 
-  // Handle search button press
   const handleSearch = useCallback(() => {
     if (!from.trim() || !to.trim() || !date.trim()) {
       Alert.alert(
@@ -36,27 +34,23 @@ const HomeScreen = ({ navigation, route }) => {
 
     setIsLoading(true);
 
-    // Simulate an API call or data processing
     setTimeout(() => {
-      // Filter busData based on from, to, and date
       const filteredBusData = busData
         .filter((route) => route.from === from && route.to === to)
         .flatMap((route) => route.buses.map((bus) => ({ ...bus, from, to, date })));
 
-      console.log('Filtered busData:', filteredBusData); // Debugging
+      console.log('Filtered busData:', filteredBusData);
 
       setIsLoading(false);
       navigation.navigate('SearchBusScreen', { busData: filteredBusData, from, to, date });
-    }, 1000); // Simulate 1-second delay
+    }, 1000);
   }, [from, to, date, navigation]);
 
-  // Handle date selection from the calendar
   const handleDateSelect = useCallback((day) => {
     setDate(day.dateString);
     setCalendarVisible(false);
   }, []);
 
-  // Format date for display
   const formatDate = useMemo(() => (dateString) => {
     if (!dateString) return 'Date of Travel (DD/MM/YYYY)';
     const date = new Date(dateString);
@@ -71,7 +65,6 @@ const HomeScreen = ({ navigation, route }) => {
       <View style={styles.innerContainer}>
         <Image source={require("../assets/logo.png")} style={styles.logo} />
 
-        {/* From Field */}
         <TouchableOpacity
           style={styles.input}
           onPress={() => navigation.navigate('SelectRouteScreen', { type: 'from', from, to })}
@@ -81,7 +74,6 @@ const HomeScreen = ({ navigation, route }) => {
           <Text>{from || 'From'}</Text>
         </TouchableOpacity>
 
-        {/* To Field */}
         <TouchableOpacity
           style={styles.input}
           onPress={() => navigation.navigate('SelectRouteScreen', { type: 'to', from, to })}
@@ -91,7 +83,6 @@ const HomeScreen = ({ navigation, route }) => {
           <Text>{to || 'To'}</Text>
         </TouchableOpacity>
 
-        {/* Date Field */}
         <TouchableOpacity
           style={styles.input}
           onPress={() => setCalendarVisible(true)}
@@ -104,7 +95,6 @@ const HomeScreen = ({ navigation, route }) => {
           </View>
         </TouchableOpacity>
 
-        {/* Search Bus Button */}
         <TouchableOpacity
           style={styles.searchButton}
           onPress={handleSearch}
@@ -118,27 +108,8 @@ const HomeScreen = ({ navigation, route }) => {
             <Text style={styles.buttonText}>Search Bus</Text>
           )}
         </TouchableOpacity>
-
-        {/* Additional Buttons */}
-        <View style={styles.additionalButtons}>
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() => navigation.navigate('Login')}
-            accessibilityLabel="Navigate to Login Screen"
-          >
-            <Text style={styles.buttonText}>LogIn</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() => navigation.navigate('SignUp')}
-            accessibilityLabel="Navigate to Sign Up Screen"
-          >
-            <Text style={styles.buttonText}>SignUp</Text>
-          </TouchableOpacity>
-        </View>
       </View>
 
-      {/* Calendar Modal */}
       <Modal
         visible={isCalendarVisible}
         transparent
@@ -219,20 +190,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
-  },
-  additionalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    paddingHorizontal: 10,
-  },
-  button: {
-    flex: 1,
-    margin: 5,
-    padding: 10,
-    backgroundColor: '#ddd',
-    borderRadius: 5,
-    alignItems: 'center',
   },
   modalBackdrop: {
     flex: 1,

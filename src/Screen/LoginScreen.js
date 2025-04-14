@@ -76,9 +76,9 @@ const LoginScreen = ({ navigation }) => {
 
         {/* Welcome Text */}
         <View style={styles.textContainer}>
-          <Text style={styles.headingText}>Hello,</Text>
-          <Text style={styles.headingText}>Welcome to</Text>
-          <Text style={styles.headingText}>Buko</Text>
+          <Text style={styles.headingText}>Login</Text>
+          <Text style={styles.headingText}>To Your</Text>
+          <Text style={styles.headingText}>Buko account</Text>
         </View>
 
         {/* Email Input */}

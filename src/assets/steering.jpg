@@ -1,0 +1,2 @@
+{/* <Image source={require('../../assets/steering.jpg')} style={styles.steeringIcon} /> */}
+<Ionicons name="car-sport-outline" size={30} color="black" />

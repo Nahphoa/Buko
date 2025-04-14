@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import {
-  View, Text, TouchableOpacity, FlatList, StyleSheet, Alert,
-} from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, StyleSheet, Alert, ScrollView } from 'react-native';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
 const SeatSelectionScreen = ({ route }) => {
-  const { busId, from, to, date } = route.params;
+  const navigation = useNavigation();
 
+  const { busId, from, to, date, busName = 'Express Bus', price = 900 } = route.params;
   const [selectedSeats, setSelectedSeats] = useState([]);
 
   const seats = [
@@ -31,95 +32,223 @@ const SeatSelectionScreen = ({ route }) => {
   };
 
   const confirmBooking = () => {
-    Alert.alert('Booking Confirmed', `You have booked seats: ${selectedSeats.join(', ') || 'None'}`);
+    if (selectedSeats.length === 0) {
+      Alert.alert('No seats selected', 'Please select at least one seat before proceeding');
+      return;
+    }
+    navigation.navigate('Login', {
+      bookingDetails: {
+        busId,
+        from,
+        to,
+        date,
+        busName,
+        selectedSeats,
+        totalPrice: selectedSeats.length * price
+      }
+    });
   };
 
+  const totalPrice = selectedSeats.length * price;
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.sectionTitle}>Select Seats</Text>
-      <FlatList
-        data={seats}
-        keyExtractor={(item, index) => `row-${index}`}
-        renderItem={({ item: row, index: rowIndex }) => (
-          <View style={styles.row}>
-            {row.map((seat, seatIndex) => (
-              seat ? (
-                <TouchableOpacity
-                  key={`${rowIndex}-${seatIndex}-${seat.id}`}
-                  style={{
-                    ...styles.seat,
-                    ...(selectedSeats.includes(seat.id) ? styles.selectedSeat : {}),
-                  }}
-                  onPress={() => handleSeatSelection(seat)}
-                >
-                  <Text style={styles.seatText}>{seat.id}</Text>
-                </TouchableOpacity>
-              ) : (
-                <View key={`aisle-${rowIndex}-${seatIndex}`} style={styles.aisle} />
-              )
-            ))}
+    <ScrollView 
+      contentContainerStyle={styles.scrollContainer}
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+    >
+      <View style={styles.container}>
+        {/* Back Arrow */}
+        
+               <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+               <Ionicons name="arrow-back" size={24} color="black" />
+             </TouchableOpacity>
+       
+
+        <Text style={styles.title}>{busName} - Select Your Seat</Text>
+        <Text style={styles.subtitle}>{from} → {to} | {date}</Text>
+
+        <View style={styles.layoutBox}>
+          <View style={styles.headerRow}>
+            <Text style={styles.label}>Lower Deck</Text>
+            <MaterialCommunityIcons name="steering" size={32} color="#444" />
           </View>
-        )}
-      />
-      <Text style={styles.selectedSeatsText}>Selected: {selectedSeats.join(', ') || 'None'}</Text>
-      <TouchableOpacity style={styles.confirmButton} onPress={confirmBooking}>
-        <Text style={styles.confirmButtonText}>Confirm Booking</Text>
-      </TouchableOpacity>
-    </View>
+
+          <FlatList
+            data={seats}
+            scrollEnabled={false} // Disable scrolling for FlatList since we're using ScrollView
+            keyExtractor={(_, index) => `row-${index}`}
+            renderItem={({ item: row, index: rowIndex }) => (
+              <View style={styles.row}>
+                {row.map((seat, seatIndex) =>
+                  seat ? (
+                    <TouchableOpacity
+                      key={`${rowIndex}-${seatIndex}-${seat.id}`}
+                      style={[
+                        styles.seat,
+                        selectedSeats.includes(seat.id)
+                          ? styles.selectedSeat
+                          : styles.availableSeat,
+                      ]}
+                      onPress={() => handleSeatSelection(seat)}
+                    >
+                      <Text style={styles.seatText}>{seat.id}</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <View key={`aisle-${rowIndex}-${seatIndex}`} style={styles.aisle} />
+                  )
+                )}
+              </View>
+            )}
+            contentContainerStyle={styles.seatList}
+          />
+        </View>
+
+        <View style={styles.summaryContainer}>
+          <Text style={styles.summaryText}>
+            Selected: {selectedSeats.length} seat{selectedSeats.length !== 1 ? 's' : ''}
+          </Text>
+          <Text style={styles.totalText}>Total: ₹{totalPrice}</Text>
+        </View>
+
+        <TouchableOpacity 
+          style={[
+            styles.confirmButton,
+            selectedSeats.length === 0 && styles.disabledButton
+          ]} 
+          onPress={confirmBooking}
+          disabled={selectedSeats.length === 0}
+        >
+          <Text style={styles.confirmText}>
+            {selectedSeats.length > 0 ? 'Confirm Booking' : 'Select Seats'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
+  scrollContainer: {
+    flexGrow: 1,
+    paddingBottom: 30, // Extra padding at bottom
+  },
   container: {
     flex: 1,
     padding: 20,
+    backgroundColor: '#f5f5f5',
   },
-  sectionTitle: {
-    fontSize: 16,
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 15,
+    zIndex: 10,
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    borderRadius: 20,
+    padding: 5,
+  },
+  title: {
+    fontSize: 22,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginTop: 60,
+    marginBottom: 5,
+    textAlign: 'center',
+    color: '#333',
+  },
+  subtitle: {
+    fontSize: 16,
+    marginBottom: 20,
+    textAlign: 'center',
+    color: '#666',
+  },
+  layoutBox: {
+    width: '100%',
+    padding: 15,
+    borderRadius: 12,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  label: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#444',
+  },
+  seatList: {
+    paddingBottom: 10,
   },
   row: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-  seat: {
-    width: 50,
-    height: 50,
     justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 5,
-  },
-  selectedSeat: {
-    backgroundColor: '#003580',
-    borderColor: '#003580',
-  },
-  seatText: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    marginVertical: 6,
   },
   aisle: {
-    width: 20,
+    width: 40,
   },
-  selectedSeatsText: {
-    marginTop: 20,
+  seat: {
+    width: 36,
+    height: 36,
+    marginHorizontal: 5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 6,
+    borderWidth: 2,
+  },
+  availableSeat: {
+    backgroundColor: '#fff',
+    borderColor: 'green',
+  },
+  selectedSeat: {
+    backgroundColor: 'lightgreen',
+    borderColor: 'green',
+  },
+  seatText: {
+    fontWeight: '600',
+    fontSize: 12,
+  },
+  summaryContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginVertical: 15,
+    paddingHorizontal: 10,
+  },
+  summaryText: {
     fontSize: 16,
+    color: '#555',
+  },
+  totalText: {
+    fontSize: 18,
     fontWeight: 'bold',
+    color: '#333',
   },
   confirmButton: {
-    marginTop: 20,
-    backgroundColor: '#003580',
+    backgroundColor: 'green',
     padding: 15,
-    borderRadius: 5,
+    borderRadius: 8,
+    width: '100%',
     alignItems: 'center',
+    marginTop: 10,
+    marginBottom: 20, // Added margin at bottom for better scrolling
   },
-  confirmButtonText: {
+  disabledButton: {
+    backgroundColor: '#ccc',
+  },
+  confirmText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
   },
 });

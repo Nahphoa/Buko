@@ -1,8 +1,7 @@
-
 import React from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity,ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 const SearchBusScreen = ({ route }) => {
   const { busData, from, to, date } = route.params;
@@ -39,9 +38,10 @@ const SearchBusScreen = ({ route }) => {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#003580" />
-        </TouchableOpacity>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <Ionicons name="arrow-back" size={24} color="black" />
+      </TouchableOpacity>
+
         <Text style={styles.headerTitle}>Search Results</Text>
       </View>
 
@@ -78,15 +78,27 @@ const SearchBusScreen = ({ route }) => {
 export default SearchBusScreen;
 
 const styles = StyleSheet.create({
+  scrollContainer: {
+    flexGrow: 1,
+    paddingBottom: 30, // Extra padding at bottom
+  },
   container: {
     flex: 1,
     padding: 20,
     backgroundColor: '#fff',
+  
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
+    paddingTop:20,
+  },
+  backButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: 20,

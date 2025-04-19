@@ -1,94 +1,85 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
+  FlatList,
   StyleSheet,
-  Alert,
+  ActivityIndicator,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const BookingScreen = () => {
-  const [isSignup, setIsSignup] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleAuth = () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
-    Alert.alert('Success', isSignup ? 'Account created!' : 'Logged in!');
-  };
+  useEffect(() => {
+    const fetchBookings = async () => {
+      try {
+        const stored = await AsyncStorage.getItem('bookingHistory');
+        const parsed = stored ? JSON.parse(stored) : [];
+        setBookings(parsed.reverse()); // Show latest first
+      } catch (error) {
+        console.error('Error fetching bookings:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const unsubscribe = fetchBookings();
+    return () => unsubscribe;
+  }, []);
+
+  const renderItem = ({ item }) => (
+    <View style={styles.bookingCard}>
+      <Text style={styles.item}>Bus: {item.busName}</Text>
+      <Text style={styles.item}>
+        From: {item.from} → {item.to}
+      </Text>
+      <Text style={styles.item}>Date: {item.date}</Text>
+      <Text style={styles.item}>Time: {item.time || 'N/A'}</Text>
+      <Text style={styles.item}>
+        Passenger: {item.passengerDetails.name}, {item.passengerDetails.age},{' '}
+        {item.passengerDetails.gender}
+      </Text>
+      <Text style={styles.item}>
+        Seats: {item.selectedSeats?.join(', ') || 'N/A'}
+      </Text>
+      <Text style={styles.item}>Total: ₹{item.totalPrice}</Text>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{isSignup ? 'Sign Up' : 'Login'}</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        keyboardType="email-address"
-        value={email}
-        onChangeText={setEmail}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
-      <TouchableOpacity style={styles.button} onPress={handleAuth}>
-        <Text style={styles.buttonText}>{isSignup ? 'Sign Up' : 'Login'}</Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => setIsSignup(!isSignup)}>
-        <Text style={styles.switchText}>
-          {isSignup ? 'Already have an account? Login' : "Don't have an account? Sign Up"}
-        </Text>
-      </TouchableOpacity>
+      <Text style={styles.title}>Booking History</Text>
+      {loading ? (
+        <ActivityIndicator size="large" color="#003580" />
+      ) : bookings.length === 0 ? (
+        <Text style={styles.noBookingText}>No bookings yet.</Text>
+      ) : (
+        <FlatList
+          data={bookings}
+          keyExtractor={(item, index) => index.toString()}
+          renderItem={renderItem}
+          contentContainerStyle={{ paddingBottom: 20 }}
+        />
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#fff',
+  container: { flex: 1, padding: 16, backgroundColor: '#fff' },
+  title: { fontSize: 20, fontWeight: 'bold', marginBottom: 12 },
+  noBookingText: { fontSize: 16, color: '#555', marginTop: 20 },
+  bookingCard: {
+    backgroundColor: '#f0f4f8',
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 10,
+    borderLeftWidth: 4,
+    borderLeftColor: '#003580',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 16,
-  },
-  input: {
-    width: '100%',
-    height: 40,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    marginBottom: 12,
-  },
-  button: {
-    width: '100%',
-    backgroundColor: '#003580',
-    padding: 10,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  switchText: {
-    marginTop: 16,
-    color: '#003580',
-    fontSize: 14,
-  },
+  item: { fontSize: 14, marginBottom: 4, color: '#333' },
 });
 
 export default BookingScreen;

@@ -1,66 +1,40 @@
-import { 
-  StyleSheet, Text, TextInput, TouchableOpacity, View, Image, KeyboardAvoidingView, Platform, Alert 
+import {
+  StyleSheet, Text, TextInput, TouchableOpacity, View, Image,
+  KeyboardAvoidingView, Platform, Alert, ScrollView
 } from 'react-native';
 import React, { useState } from 'react';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import FontAwesome from 'react-native-vector-icons/FontAwesome'; // For Facebook and Google icons
 import { auth } from '../firebaseConfig';
-import { createUserWithEmailAndPassword, PhoneAuthProvider, signInWithCredential } from "firebase/auth";
+import { createUserWithEmailAndPassword } from "firebase/auth";
 
 const SignUpScreen = ({ navigation }) => {
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [verificationCode, setVerificationCode] = useState('');
-  const [verificationId, setVerificationId] = useState(null);
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [dob, setDob] = useState('');
+  const [gender, setGender] = useState('');
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
 
-    console.log("Firebase Auth:", auth);
-    
   const handleEmailSignUp = () => {
-    if (!email || !password) {
+    if (!username || !email || !phoneNumber || !password || !confirmPassword || !dob || !gender) {
       Alert.alert("Error", "Please fill in all fields!");
       return;
     }
 
+    if (password !== confirmPassword) {
+      Alert.alert("Error", "Passwords do not match!");
+      return;
+    }
+
     createUserWithEmailAndPassword(auth, email, password)
-      .then((userCredentials) => {
+      .then(() => {
         Alert.alert("Success", "Account created successfully!");
-        navigation.navigate('Login'); // Redirect to login screen
+        navigation.navigate('Login');
       })
       .catch((error) => Alert.alert("Sign-up Error", error.message));
-  };
-
-  const sendOTP = async () => {
-    if (!phoneNumber) {
-      Alert.alert("Error", "Please enter a valid phone number!");
-      return;
-    }
-
-    try {
-      const phoneProvider = new PhoneAuthProvider(auth);
-      const verificationId = await phoneProvider.verifyPhoneNumber(phoneNumber, null);
-      setVerificationId(verificationId);
-      Alert.alert("OTP Sent", "A verification code has been sent to your phone.");
-    } catch (error) {
-      Alert.alert("Error", error.message);
-    }
-  };
-
-  // Verify OTP for Phone Sign-Up
-  const verifyOTP = async () => {
-    if (!verificationCode) {
-      Alert.alert("Error", "Please enter the OTP code!");
-      return;
-    }
-
-    try {
-      const credential = PhoneAuthProvider.credential(verificationId, verificationCode);
-      await signInWithCredential(auth, credential);
-      Alert.alert("Success", "Phone number verified! Account created.");
-      navigation.navigate('Login'); // Redirect to login screen
-    } catch (error) {
-      Alert.alert("Error", error.message);
-    }
   };
 
   return (
@@ -68,18 +42,30 @@ const SignUpScreen = ({ navigation }) => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      <View style={styles.innerContainer}>
-        {/* Logo */}
+      <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
+        {/* Logo at the top center */}
         <Image source={require('../assets/logo.png')} style={styles.logo} />
 
-        {/* Welcome Text */}
+        {/* Headings centered below the logo */}
         <View style={styles.textContainer}>
-          <Text style={[styles.headingText, { marginLeft: 25 }]}>Let's get</Text>
-          <Text style={styles.headingText}>started with</Text>
-          <Text style={[styles.headingText, { marginLeft: 47 }]}>Buko</Text>
+          <Text style={styles.headingText}>Please SingnUp first to</Text>
+          <Text style={[styles.headingText, styles.bukoText]}>Buko</Text>
         </View>
 
-        {/* Email Input */}
+        {/* Username */}
+        <View style={styles.inputContainer}>
+          <Ionicons name="person-outline" size={24} color="#003580" style={styles.icon} />
+          <TextInput
+            style={styles.textInput}
+            placeholder="Enter your username"
+            placeholderTextColor="#999"
+            autoCapitalize="none"
+            value={username}
+            onChangeText={setUsername}
+          />
+        </View>
+
+        {/* Email */}
         <View style={styles.inputContainer}>
           <Ionicons name="mail-outline" size={24} color="#003580" style={styles.icon} />
           <TextInput
@@ -89,30 +75,11 @@ const SignUpScreen = ({ navigation }) => {
             keyboardType="email-address"
             autoCapitalize="none"
             value={email}
-            onChangeText={(text) => setEmail(text)}
+            onChangeText={setEmail}
           />
         </View>
 
-        {/* Password Input */}
-        <View style={styles.inputContainer}>
-          <Ionicons name="lock-closed-outline" size={24} color="#003580" style={styles.icon} />
-          <TextInput
-            style={styles.textInput}
-            placeholder="Enter your password"
-            placeholderTextColor="#999"
-            secureTextEntry={true}
-            autoCapitalize="none"
-            value={password}
-            onChangeText={(text) => setPassword(text)}
-          />
-        </View>
-
-        {/* Forgot Password Link */}
-        <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')} style={styles.forgotPasswordContainer}>
-          <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-        </TouchableOpacity>
-
-        {/* Phone Number Input */}
+        {/* Phone Number */}
         <View style={styles.inputContainer}>
           <Ionicons name="call-outline" size={24} color="#003580" style={styles.icon} />
           <TextInput
@@ -120,10 +87,70 @@ const SignUpScreen = ({ navigation }) => {
             placeholder="Enter your phone number"
             placeholderTextColor="#999"
             keyboardType="phone-pad"
-            autoCapitalize="none"
             value={phoneNumber}
-            onChangeText={(text) => setPhoneNumber(text)}
+            onChangeText={setPhoneNumber}
           />
+        </View>
+
+        {/* Password */}
+        <View style={styles.inputContainer}>
+          <Ionicons name="lock-closed-outline" size={24} color="#003580" style={styles.icon} />
+          <TextInput
+            style={styles.textInput}
+            placeholder="Enter your password"
+            placeholderTextColor="#999"
+            secureTextEntry={!passwordVisible}
+            value={password}
+            onChangeText={setPassword}
+          />
+          <TouchableOpacity onPress={() => setPasswordVisible(!passwordVisible)}>
+            <Ionicons name={passwordVisible ? 'eye-off' : 'eye'} size={24} color="#003580" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Confirm Password */}
+        <View style={styles.inputContainer}>
+          <Ionicons name="lock-closed-outline" size={24} color="#003580" style={styles.icon} />
+          <TextInput
+            style={styles.textInput}
+            placeholder="Confirm your password"
+            placeholderTextColor="#999"
+            secureTextEntry={!confirmPasswordVisible}
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+          />
+          <TouchableOpacity onPress={() => setConfirmPasswordVisible(!confirmPasswordVisible)}>
+            <Ionicons name={confirmPasswordVisible ? 'eye-off' : 'eye'} size={24} color="#003580" />
+          </TouchableOpacity>
+        </View>
+
+        {/* DOB */}
+        <View style={styles.inputContainer}>
+          <Ionicons name="calendar-outline" size={24} color="#003580" style={styles.icon} />
+          <TextInput
+            style={styles.textInput}
+            placeholder="Date of Birth (DD/MM/YYYY)"
+            placeholderTextColor="#999"
+            value={dob}
+            onChangeText={setDob}
+          />
+        </View>
+
+        {/* Gender */}
+        <View style={styles.genderContainer}>
+          <Text style={styles.genderLabel}>Gender:</Text>
+          <TouchableOpacity
+            style={[styles.genderButton, gender === 'Male' && styles.selectedGender]}
+            onPress={() => setGender('Male')}
+          >
+            <Text style={[styles.genderText, gender === 'Male' && styles.selectedText]}>Male</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.genderButton, gender === 'Female' && styles.selectedGender]}
+            onPress={() => setGender('Female')}
+          >
+            <Text style={[styles.genderText, gender === 'Female' && styles.selectedText]}>Female</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Sign Up Button */}
@@ -131,26 +158,11 @@ const SignUpScreen = ({ navigation }) => {
           <Text style={styles.buttonText}>Sign Up</Text>
         </TouchableOpacity>
 
-        {/* Social Login Buttons */}
-        <View style={styles.socialLoginContainer}>
-          {/* Login with Google */}
-          <TouchableOpacity style={styles.socialButton}>
-            <FontAwesome name="google" size={24} color="#DB4437" style={styles.socialIcon} />
-            <Text style={styles.socialButtonText}>Sign Up with Google</Text>
-          </TouchableOpacity>
-
-          {/* Login with Facebook */}
-          <TouchableOpacity style={styles.socialButton}>
-            <FontAwesome name="facebook" size={24} color="#4267B2" style={styles.socialIcon} />
-            <Text style={styles.socialButtonText}>Sign Up with Facebook</Text>
-          </TouchableOpacity>
-        </View>
-
         {/* Login Link */}
         <TouchableOpacity onPress={() => navigation.navigate('Login')}>
           <Text style={styles.signUpText}>Already have an account? Log In</Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 };
@@ -162,24 +174,30 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFE4C4',
   },
-  innerContainer: {
-    flex: 1,
-    justifyContent: 'center',
+  scrollContainer: {
     padding: 20,
+    paddingTop: 60,
+    paddingBottom: 40,
+    alignItems: 'center',
   },
   logo: {
     width: 100,
-    height: 130,
-    marginBottom: 2,
+    height: 120,
+    marginBottom: 20,
   },
   textContainer: {
-    alignSelf: 'flex-end',
-    bottom: 130
+    marginBottom: 30,
+    alignItems: 'center',
   },
   headingText: {
+    fontSize: 26,
+    color: '#003580',
+    fontWeight: 'bold',
+  },
+  bukoText: {
     fontSize: 32,
     color: '#003580',
-    fontFamily: 'sans-serif-medium',
+    fontWeight: '900',
   },
   inputContainer: {
     flexDirection: 'row',
@@ -188,24 +206,16 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     borderWidth: 1,
     borderRadius: 5,
+    marginBottom: 10,
     paddingHorizontal: 10,
-    marginBottom: 12,
   },
   icon: {
-    marginRight: 15,
+    marginRight: 10,
   },
   textInput: {
     flex: 1,
     height: 50,
     color: '#000',
-  },
-  forgotPasswordContainer: {
-    alignSelf: 'flex-end',
-    marginBottom: 20,
-  },
-  forgotPasswordText: {
-    color: '#003580',
-    textDecorationLine: 'underline',
   },
   button: {
     width: '100%',
@@ -214,7 +224,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 5,
+    marginTop: 15,
   },
   buttonText: {
     color: '#fff',
@@ -222,8 +232,38 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   signUpText: {
-    marginTop: 10,
+    marginTop: 15,
     color: '#003580',
+    textAlign: 'center',
     textDecorationLine: 'underline',
+  },
+  genderContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  genderLabel: {
+    marginRight: 15,
+    fontSize: 16,
+    color: '#003580',
+    fontWeight: 'bold',
+  },
+  genderButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#003580',
+    marginHorizontal: 5,
+  },
+  selectedGender: {
+    backgroundColor: '#003580',
+  },
+  genderText: {
+    color: '#003580',
+    fontWeight: 'bold',
+  },
+  selectedText: {
+    color: '#fff',
   },
 });

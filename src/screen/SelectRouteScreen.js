@@ -7,13 +7,17 @@ export default function SelectRouteScreen({ navigation, route }) {
   const { type, from, to } = route.params; // "from" or "to"
 
   return (
-    <View style={{ flex: 1, padding: 20 }}>
+    <View style={{ flex: 1,backgroundColor: '#40E0D0', padding: 20 }}>
       <FlatList
         data={routes}
         keyExtractor={(item) => item}
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={{ padding: 20, borderBottomWidth: 1 }}
+            style={{
+               padding: 20, 
+              borderBottomWidth: 1, 
+            
+            }}
             onPress={() => {
               navigation.navigate("Home", {
                 from: type === "from" ? item : from, 
@@ -28,3 +32,4 @@ export default function SelectRouteScreen({ navigation, route }) {
     </View>
   );
 }
+

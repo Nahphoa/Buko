@@ -1,22 +1,36 @@
-import { StyleSheet, Text, TextInput, TouchableOpacity, View, Image, KeyboardAvoidingView, Platform } from 'react-native';
-import React from 'react';
+import {
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Alert,
+} from 'react-native';
+import React, { useState } from 'react';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import FontAwesome from 'react-native-vector-icons/FontAwesome'; // For Facebook and Google icons
-import {auth} from '../firebaseConfig';
-import { signInWithEmailAndPassword, signInWithPhoneNumber, PhoneAuthProvider, signInWithCredential } from "firebase/auth";
-import { useState } from 'react';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import { auth } from '../firebaseConfig';
+import {
+  signInWithEmailAndPassword,
+  PhoneAuthProvider,
+  signInWithCredential,
+} from 'firebase/auth';
 
 const LoginScreen = ({ navigation }) => {
-  const [email,setEmail] =useState('')
-  const [password,setPassword] =useState('')
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [verificationId, setVerificationId] = useState(null);
 
   const handleEmailLogin = () => {
     signInWithEmailAndPassword(auth, email, password)
-      .then(() => Alert.alert("Success", "Logged in with email!"))
-      .catch((error) => Alert.alert("Error", error.message));
+      .then(() => Alert.alert('Success', 'Logged in with email!'))
+      .catch((error) => Alert.alert('Error', error.message));
   };
 
   const sendOTP = async () => {
@@ -24,20 +38,19 @@ const LoginScreen = ({ navigation }) => {
       const phoneProvider = new PhoneAuthProvider(auth);
       const verificationId = await phoneProvider.verifyPhoneNumber(phoneNumber, null);
       setVerificationId(verificationId);
-      Alert.alert("OTP Sent", "A verification code has been sent to your phone.");
+      Alert.alert('OTP Sent', 'A verification code has been sent to your phone.');
     } catch (error) {
-      Alert.alert("Error", error.message);
+      Alert.alert('Error', error.message);
     }
   };
 
-  // Verify OTP for Phone Sign-In
   const verifyOTP = async () => {
     try {
       const credential = PhoneAuthProvider.credential(verificationId, verificationCode);
       await signInWithCredential(auth, credential);
-      Alert.alert("Success", "Logged in with phone!");
+      Alert.alert('Success', 'Logged in with phone!');
     } catch (error) {
-      Alert.alert("Error", error.message);
+      Alert.alert('Error', error.message);
     }
   };
 
@@ -46,72 +59,81 @@ const LoginScreen = ({ navigation }) => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      <View style={styles.innerContainer}>
-        
-        {/* Logo */}
-        <Image source={require('../assets/logo.png')} style={styles.logo} />
+      <ScrollView
+        contentContainerStyle={styles.innerContainer}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.innerContent}>
+          {/* Logo */}
+          <Image source={require('../assets/logo.png')} style={styles.logo} />
 
-        {/* Welcome Text */}
-        <View style={styles.textContainer}>
-          <Text style={styles.headingText}>Hello,</Text>
-          <Text style={styles.headingText}>Welcome to</Text>
-          <Text style={styles.headingText}>Buko</Text>
-        </View>
+          {/* Welcome Text */}
+          <View style={styles.textContainer}>
+            <Text style={styles.headingText}>Hello,</Text>
+            <Text style={styles.headingText}>Welcome to</Text>
+            <Text style={styles.headingText}>Buko</Text>
+          </View>
 
-        {/* Email Input */}
-        <View style={styles.inputContainer}>
-          <Ionicons name="mail-outline" size={24} color="#003580" style={styles.icon} />
-          <TextInput
-            style={styles.textInput}
-            placeholder="Enter your email"
-            placeholderTextColor="#999"
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-        </View>
+          {/* Email Input */}
+          <View style={styles.inputContainer}>
+            <Ionicons name="mail-outline" size={24} color="#003580" style={styles.icon} />
+            <TextInput
+              style={styles.textInput}
+              placeholder="Enter your email"
+              placeholderTextColor="#999"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={email}
+              onChangeText={setEmail}
+            />
+          </View>
 
-        {/* Password Input */}
-        <View style={styles.inputContainer}>
-          <Ionicons name="lock-closed-outline" size={24} color="#003580" style={styles.icon} />
-          <TextInput
-            style={styles.textInput}
-            placeholder="Enter your password"
-            placeholderTextColor="#999"
-            secureTextEntry={true}
-            autoCapitalize="none"
-          />
-        </View>
+          {/* Password Input */}
+          <View style={styles.inputContainer}>
+            <Ionicons name="lock-closed-outline" size={24} color="#003580" style={styles.icon} />
+            <TextInput
+              style={styles.textInput}
+              placeholder="Enter your password"
+              placeholderTextColor="#999"
+              secureTextEntry
+              autoCapitalize="none"
+              value={password}
+              onChangeText={setPassword}
+            />
+          </View>
 
-        {/* Forgot Password Link */}
-        <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')} style={styles.forgotPasswordContainer}>
-          <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-        </TouchableOpacity>
-
-        {/* Login Button */}
-        <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>Login</Text>
-        </TouchableOpacity>
-
-        {/* Social Login Buttons */}
-        <View style={styles.socialLoginContainer}>
-          {/* Login with Google */}
-          <TouchableOpacity style={styles.socialButton}>
-            <FontAwesome name="google" size={24} color="#DB4437" style={styles.socialIcon} />
-            <Text style={styles.socialButtonText}>Login with Google</Text>
+          {/* Forgot Password Link */}
+          <TouchableOpacity
+            onPress={() => navigation.navigate('ForgotPassword')}
+            style={styles.forgotPasswordContainer}
+          >
+            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
 
-          {/* Login with Facebook */}
-          <TouchableOpacity style={styles.socialButton}>
-            <FontAwesome name="facebook" size={24} color="#4267B2" style={styles.socialIcon} />
-            <Text style={styles.socialButtonText}>Login with Facebook</Text>
+          {/* Login Button */}
+          <TouchableOpacity style={styles.button} onPress={handleEmailLogin}>
+            <Text style={styles.buttonText}>Login</Text>
+          </TouchableOpacity>
+
+          {/* Social Login Buttons */}
+          <View style={styles.socialLoginContainer}>
+            <TouchableOpacity style={styles.socialButton}>
+              <FontAwesome name="google" size={24} color="#DB4437" style={styles.socialIcon} />
+              <Text style={styles.socialButtonText}>Login with Google</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.socialButton}>
+              <FontAwesome name="facebook" size={24} color="#4267B2" style={styles.socialIcon} />
+              <Text style={styles.socialButtonText}>Login with Facebook</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Sign Up Link */}
+          <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
+            <Text style={styles.signUpText}>Don't have an account? Sign Up</Text>
           </TouchableOpacity>
         </View>
-
-        {/* Sign Up Link */}
-        <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
-          <Text style={styles.signUpText}>Don't have an account? Sign Up</Text>
-        </TouchableOpacity>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 };
@@ -121,20 +143,22 @@ export default LoginScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFE4C4',
+    backgroundColor: '#40E0D0',
   },
   innerContainer: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: 'center',
-    alignItems: 'center',
     padding: 20,
   },
-  
-
+  innerContent: {
+    alignItems: 'center',
+    width: '100%',
+  },
   logo: {
     width: 100,
-    height: 1,
+    height: 100,
     marginBottom: 20,
+    resizeMode: 'contain',
   },
   textContainer: {
     marginBottom: 30,
@@ -143,7 +167,7 @@ const styles = StyleSheet.create({
   headingText: {
     fontSize: 32,
     color: '#003580',
-    fontFamily: 'sans-serif-medium', // Ensure this font is available or use a fallback
+    fontFamily: 'sans-serif-medium',
   },
   inputContainer: {
     flexDirection: 'row',

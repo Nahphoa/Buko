@@ -1,8 +1,11 @@
 import React from "react";
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import busData from "../../date/busdata";
 
+
 const BusListScreen = ({ route }) => {
+  const navigation = useNavigation();
   const { from, to, selectedDate } = route.params;
 
   // Find buses matching the selected route
@@ -10,14 +13,9 @@ const BusListScreen = ({ route }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>
+     
 
-
-
-
-        
-        Buses from {from} to {to} on {selectedDate}
-      </Text>
+      <Text style={styles.title}>Buses from {from} to {to} on {selectedDate}</Text>
 
       {buses.length > 0 ? (
         <FlatList
@@ -28,7 +26,12 @@ const BusListScreen = ({ route }) => {
               <Text style={styles.busName}>{item.name}</Text>
               <Text>Time: {item.time}</Text>
               <Text>Price: ₹{item.price}</Text>
-              <TouchableOpacity style={styles.bookButton}>
+              <TouchableOpacity
+                style={styles.bookButton}
+                onPress={() =>
+                  navigation.navigate("Bookyseat", { busId: item.id, busName: item.name, price: item.price })
+                }
+              >
                 <Text style={styles.buttonText}>Book Now</Text>
               </TouchableOpacity>
             </View>
@@ -44,7 +47,10 @@ const BusListScreen = ({ route }) => {
 export default BusListScreen;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#fff" },
+  container: { 
+    flex: 1, 
+    padding: 20, 
+    backgroundColor: "#40E0D0" },
   title: { fontSize: 20, fontWeight: "bold", marginBottom: 10 },
   busItem: { padding: 20, borderBottomWidth: 1, marginBottom: 10 },
   busName: { fontSize: 18, fontWeight: "bold" },

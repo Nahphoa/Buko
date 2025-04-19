@@ -14,6 +14,8 @@ import SelectRouteScreen from './src/screen/SelectRouteScreen';
 import LoginScreen from './src/screen/LoginScreen';
 import SignUpScreen from './src/screen/SignUpScreen';
 import BusListScreen from './src/screen/BusListScreen';
+import Bookyseat from './src/screen/Bookyseat';
+import BookingMenu from './src/screen/BookingMenu';
 
 const StackNavigator = () => {
   const MyTabs = createBottomTabNavigator();
@@ -58,12 +60,14 @@ const StackNavigator = () => {
   return (
     <NavigationContainer>
     <Stack.Navigator>
-      <Stack.Screen name="BUKO" component={BottomTabs} />
+      <Stack.Screen name="Main" component={BottomTabs}/>
       <Stack.Screen name="Home" component={HomeScreen} />
       <Stack.Screen name="SelectRoute" component={SelectRouteScreen} />
-      <Stack.Screen name ="SignUp" component={SignUpScreen}/>
-      <Stack.Screen name ="Login" component={LoginScreen}/>
+      
+      <Stack.Screen name ="SignUp" component={SignUpScreen} />
       <Stack.Screen name ="BusList" component={BusListScreen}/>
+      <Stack.Screen name ="Bookyseat" component={Bookyseat}/>
+      <Stack.Screen name ="Booking" component={BookingScreen} option ={{headerShown:false}} />
       
     </Stack.Navigator>
     </NavigationContainer>

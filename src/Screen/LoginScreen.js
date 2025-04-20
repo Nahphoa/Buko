@@ -1,56 +1,52 @@
-import { 
-  StyleSheet, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  View, 
-  Image, 
-  KeyboardAvoidingView, 
-  Platform, 
-  Alert, 
+import {
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  Alert,
   ActivityIndicator,
-  ScrollView
+  ScrollView,
 } from 'react-native';
 import React, { useState } from 'react';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import { auth } from '../firebaseConfig';
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 const LoginScreen = ({ navigation, route }) => {
-  // State variables
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [secureTextEntry, setSecureTextEntry] = useState(true);
-  
-  // Get redirect data from navigation params
-  const { redirectTo, bookingData } = route.params || {};
+
+  const redirectTo = route?.params?.redirectTo;
+  const bookingData = route?.params?.bookingData;
 
   const handleLoginSuccess = () => {
     if (redirectTo === 'BookingDetailsScreen' && bookingData) {
-      // For booking flow, pass both booking data and user info
       navigation.replace(redirectTo, {
         ...bookingData,
         user: {
           email: auth.currentUser.email,
-          // Add other user data you might have
-        }
+        },
       });
     } else {
-      // Default navigation after login
       navigation.replace('Main');
     }
   };
 
   const handleEmailLogin = async () => {
     if (!email || !password) {
-      Alert.alert("Error", "Please fill in all fields!");
+      Alert.alert('Error', 'Please fill in all fields!');
       return;
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      Alert.alert("Error", "Please enter a valid email address");
+      Alert.alert('Error', 'Please enter a valid email address');
       return;
     }
 
@@ -59,25 +55,25 @@ const LoginScreen = ({ navigation, route }) => {
       await signInWithEmailAndPassword(auth, email, password);
       handleLoginSuccess();
     } catch (error) {
-      let errorMessage = "Login failed. Please try again.";
+      let errorMessage = 'Login failed. Please try again.';
       switch (error.code) {
         case 'auth/invalid-email':
-          errorMessage = "Invalid email address format";
+          errorMessage = 'Invalid email address format';
           break;
         case 'auth/user-disabled':
-          errorMessage = "This account has been disabled";
+          errorMessage = 'This account has been disabled';
           break;
         case 'auth/user-not-found':
-          errorMessage = "No account found with this email";
+          errorMessage = 'No account found with this email';
           break;
         case 'auth/wrong-password':
-          errorMessage = "Incorrect password";
+          errorMessage = 'Incorrect password';
           break;
         case 'auth/too-many-requests':
-          errorMessage = "Too many attempts. Try again later";
+          errorMessage = 'Too many attempts. Try again later';
           break;
       }
-      Alert.alert("Login Failed", errorMessage);
+      Alert.alert('Login Failed', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -93,27 +89,24 @@ const LoginScreen = ({ navigation, route }) => {
       style={styles.container}
       enabled
     >
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={styles.scrollContainer}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Back Button */}
-        <TouchableOpacity 
-          onPress={() => navigation.goBack()} 
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
           style={styles.backButton}
           disabled={loading}
         >
           <Ionicons name="arrow-back" size={28} color="#003580" />
         </TouchableOpacity>
 
-        {/* Logo */}
-        <Image 
-          source={require('../assets/logo.png')} 
-          style={styles.logo} 
+        <Image
+          source={require('../assets/logo.png')}
+          style={styles.logo}
           resizeMode="contain"
         />
 
-        {/* Welcome Text */}
         <View style={styles.header}>
           <Text style={styles.title}>Welcome Back</Text>
           <Text style={styles.subtitle}>Login to continue your booking</Text>
@@ -121,12 +114,7 @@ const LoginScreen = ({ navigation, route }) => {
 
         {/* Email Input */}
         <View style={styles.inputContainer}>
-          <Ionicons 
-            name="mail-outline" 
-            size={20} 
-            color="#003580" 
-            style={styles.inputIcon} 
-          />
+          <Ionicons name="mail-outline" size={20} color="#003580" style={styles.inputIcon} />
           <TextInput
             style={styles.input}
             placeholder="Email address"
@@ -142,12 +130,7 @@ const LoginScreen = ({ navigation, route }) => {
 
         {/* Password Input */}
         <View style={styles.inputContainer}>
-          <Ionicons 
-            name="lock-closed-outline" 
-            size={20} 
-            color="#003580" 
-            style={styles.inputIcon} 
-          />
+          <Ionicons name="lock-closed-outline" size={20} color="#003580" style={styles.inputIcon} />
           <TextInput
             style={styles.input}
             placeholder="Password"
@@ -158,30 +141,25 @@ const LoginScreen = ({ navigation, route }) => {
             onChangeText={setPassword}
             editable={!loading}
           />
-          <TouchableOpacity 
-            onPress={toggleSecureEntry}
-            style={styles.eyeIcon}
-          >
-            <Ionicons 
-              name={secureTextEntry ? "eye-off-outline" : "eye-outline"} 
-              size={20} 
-              color="#003580" 
+          <TouchableOpacity onPress={toggleSecureEntry} style={styles.eyeIcon}>
+            <Ionicons
+              name={secureTextEntry ? 'eye-off-outline' : 'eye-outline'}
+              size={20}
+              color="#003580"
             />
           </TouchableOpacity>
         </View>
 
-        {/* Forgot Password Link */}
-        <TouchableOpacity 
-          onPress={() => navigation.navigate('ForgotPassword')} 
+        <TouchableOpacity
+          onPress={() => navigation.navigate('ForgotPassword')}
           style={styles.forgotPassword}
           disabled={loading}
         >
           <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
         </TouchableOpacity>
 
-        {/* Login Button */}
-        <TouchableOpacity 
-          style={[styles.loginButton, loading && styles.disabledButton]} 
+        <TouchableOpacity
+          style={[styles.loginButton, loading && styles.disabledButton]}
           onPress={handleEmailLogin}
           disabled={loading}
         >
@@ -201,30 +179,21 @@ const LoginScreen = ({ navigation, route }) => {
 
         {/* Social Login Buttons */}
         <View style={styles.socialButtonsContainer}>
-          <TouchableOpacity 
-            style={[styles.socialButton, styles.googleButton]}
-            disabled={loading}
-          >
+          <TouchableOpacity style={[styles.socialButton, styles.googleButton]} disabled={loading}>
             <FontAwesome name="google" size={18} color="#DB4437" />
             <Text style={styles.socialButtonText}>Google</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={[styles.socialButton, styles.facebookButton]}
-            disabled={loading}
-          >
+          <TouchableOpacity style={[styles.socialButton, styles.facebookButton]} disabled={loading}>
             <FontAwesome name="facebook" size={18} color="#4267B2" />
             <Text style={styles.socialButtonText}>Facebook</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Sign Up Link */}
+        {/* Sign Up */}
         <View style={styles.signUpContainer}>
           <Text style={styles.signUpText}>Don't have an account? </Text>
-          <TouchableOpacity 
-            onPress={() => navigation.navigate('SignUp', route.params)}
-            disabled={loading}
-          >
+          <TouchableOpacity onPress={() => navigation.navigate('SignUp', route?.params)} disabled={loading}>
             <Text style={styles.signUpLink}>Sign Up</Text>
           </TouchableOpacity>
         </View>

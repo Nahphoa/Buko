@@ -1,10 +1,11 @@
-// App.js or Navigation.js
 import React from 'react';
-import { StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
+import { useAuth } from './src/context/AuthContext';
+
+// Screens
 import HomeScreen from './src/Screen/HomeScreen';
 import BookingScreen from './src/Screen/BookingScreen';
 import ProfileScreen from './src/Screen/ProfileScreen';
@@ -22,7 +23,6 @@ import Entypo from '@expo/vector-icons/Entypo';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
-// Bottom Tab Navigator for Home, Booking, Profile
 const Tab = createBottomTabNavigator();
 function BottomTabs() {
   return (
@@ -38,7 +38,6 @@ function BottomTabs() {
         name="Home"
         component={HomeScreen}
         options={{
-          tabBarLabel: 'Home',
           tabBarIcon: ({ focused }) =>
             focused ? (
               <Entypo name="home" size={24} color="#003580" />
@@ -51,7 +50,6 @@ function BottomTabs() {
         name="Booking"
         component={BookingScreen}
         options={{
-          tabBarLabel: 'Booking',
           tabBarIcon: ({ focused }) =>
             focused ? (
               <Entypo name="ticket" size={24} color="#003580" />
@@ -64,7 +62,6 @@ function BottomTabs() {
         name="Profile"
         component={ProfileScreen}
         options={{
-          tabBarLabel: 'Profile',
           tabBarIcon: ({ focused }) =>
             focused ? (
               <Ionicons name="person" size={24} color="#003580" />
@@ -77,27 +74,59 @@ function BottomTabs() {
   );
 }
 
-// Stack Navigator for Auth & Booking Flow
 const Stack = createNativeStackNavigator();
 
-export default function App() {
+export default function StackNavigator() {
+  const { user } = useAuth();
+
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Login">
-        {/* Auth Screens */}
-        <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="SignUp" component={SignUpScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ headerShown: false }} />
+      <Stack.Navigator initialRouteName={user ? 'Main' : 'Login'}>
+        {!user ? (
+          <>
+            <Stack.Screen
+              name="Login"
+              component={LoginScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="SignUp"
+              component={SignUpScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="ForgotPassword"
+              component={ForgotPasswordScreen}
+              options={{ headerShown: false }}
+            />
+          </>
+        ) : null}
 
-        {/* Main App - Bottom Tabs */}
-        <Stack.Screen name="Main" component={BottomTabs} options={{ headerShown: false }} />
-
-        {/* Booking Flow Screens */}
-        <Stack.Screen name="SelectRouteScreen" component={SelectRouteScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="SearchBusScreen" component={SearchBusScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="BusListScreen" component={BusListScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="SeatSelectionScreen" component={SeatSelectionScreen} options={{ headerShown: false }} />
-        
+        <Stack.Screen
+          name="Main"
+          component={BottomTabs}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="SelectRouteScreen"
+          component={SelectRouteScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="SearchBusScreen"
+          component={SearchBusScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="BusListScreen"
+          component={BusListScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="SeatSelectionScreen"
+          component={SeatSelectionScreen}
+          options={{ headerShown: false }}
+        />
         <Stack.Screen
           name="BookingDetailsScreen"
           component={BookingDetailsScreen}
@@ -108,11 +137,12 @@ export default function App() {
             headerTintColor: '#003580',
           }}
         />
-
-        <Stack.Screen name="PaymentScreen" component={PaymentScreen} options={{ headerShown: false }} />
+        <Stack.Screen
+          name="PaymentScreen"
+          component={PaymentScreen}
+          options={{ headerShown: false }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
-
-const styles = StyleSheet.create({});

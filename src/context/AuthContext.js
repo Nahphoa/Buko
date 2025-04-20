@@ -1,19 +1,16 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { View, Text, ActivityIndicator } from 'react-native';
 
-// 1. Create the context
 const AuthContext = createContext();
 
-// 2. Create the provider component
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const auth = getAuth();
 
   useEffect(() => {
-    // 3. Listen for auth state changes with error handling
+    const auth = getAuth();
     const unsubscribe = onAuthStateChanged(
       auth,
       (user) => {
@@ -27,14 +24,11 @@ export const AuthProvider = ({ children }) => {
       }
     );
 
-    // Cleanup subscription on unmount
     return unsubscribe;
   }, []);
 
-  // 4. Expose user and loading state
   const value = { user, loading, error };
 
-  // 5. Handle different states properly
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -53,23 +47,17 @@ export const AuthProvider = ({ children }) => {
     );
   }
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-// 6. Custom hook for easy access
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 };
 
-// 7. Styles
 const styles = {
   loadingContainer: {
     flex: 1,
@@ -98,6 +86,3 @@ const styles = {
     textAlign: 'center',
   },
 };
-
-// 8. Export the context as default
-export default AuthContext;

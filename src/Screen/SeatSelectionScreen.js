@@ -72,9 +72,9 @@ const SeatSelectionScreen = ({ route }) => {
     };
 
     if (!user) {
-      navigation.navigate('Login', {
+      navigation.navigate('RegistrationScreen', {
         redirectTo: 'BookingDetailsScreen',
-        bookingData,
+        bookingDetails: bookingData,
       });
     } else {
       setLoading(true);
@@ -109,7 +109,6 @@ const SeatSelectionScreen = ({ route }) => {
         <View style={styles.seatContainer}>
           <Text style={styles.deckLabel}>Lower Deck</Text>
 
-          {/* Steering Icon */}
           <MaterialCommunityIcons
             name="steering"
             size={30}
@@ -117,7 +116,6 @@ const SeatSelectionScreen = ({ route }) => {
             style={{ alignSelf: 'center', marginBottom: 10 }}
           />
 
-          {/* Custom Seat Layout */}
           <View style={styles.seatLayout}>
             {Array.from({ length: 10 }).map((_, index) => {
               const seat1 = seats[index * 3];
@@ -241,7 +239,7 @@ const SeatSelectionScreen = ({ route }) => {
           <ActivityIndicator color="#fff" />
         ) : (
           <Text style={styles.confirmText}>
-            {user ? 'Confirm Your Details' : 'Login to Book'}
+            {user ? 'Confirm Your Details' : 'Register to Book'}
           </Text>
         )}
       </TouchableOpacity>
@@ -250,7 +248,7 @@ const SeatSelectionScreen = ({ route }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f9fa' },
+  container: { flex: 1, backgroundColor: '#E6F0FF' },
   scrollContent: { paddingBottom: 20 },
   header: { height: 160, padding: 20, justifyContent: 'flex-end' },
   backButton: {

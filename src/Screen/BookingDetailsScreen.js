@@ -18,7 +18,6 @@ const BookingDetailsScreen = ({ navigation, route }) => {
   const [currentPassenger, setCurrentPassenger] = useState({
     name: user?.name || '',
     phone: user?.phone || '',
-    email: user?.email || '',
     age: '',
     gender: 'male',
     seat: selectedSeats[0] || '',
@@ -85,7 +84,6 @@ const BookingDetailsScreen = ({ navigation, route }) => {
       setCurrentPassenger({
         name: '',
         phone: '',
-        email: '',
         age: '',
         gender: 'male',
         seat: selectedSeats[passengers.length + 1] || '',
@@ -137,7 +135,6 @@ const BookingDetailsScreen = ({ navigation, route }) => {
           <Text style={styles.sectionTitle}>Add Passenger {passengers.length + 1}</Text>
           {[{ field: 'name', label: 'Full Name*', placeholder: 'John Doe' },
             { field: 'phone', label: 'Phone*', placeholder: '0712345678', keyboardType: 'phone-pad' },
-            { field: 'email', label: 'Email', placeholder: 'email@example.com', keyboardType: 'email-address' },
             { field: 'age', label: 'Age*', placeholder: '25', keyboardType: 'numeric' }
           ].map(({ field, label, placeholder, keyboardType }) => (
             <View key={field} style={styles.formGroup}>
@@ -148,7 +145,6 @@ const BookingDetailsScreen = ({ navigation, route }) => {
                 onChangeText={(text) => handleInputChange(field, text)}
                 placeholder={placeholder}
                 keyboardType={keyboardType}
-                editable={field !== 'email' || !user?.email}
               />
               {errors[field] && <Text style={styles.errorText}>{errors[field]}</Text>}
             </View>

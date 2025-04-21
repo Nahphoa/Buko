@@ -30,7 +30,6 @@ const SeatSelectionScreen = ({ route }) => {
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Seats 1–30 + Last row 31–35
   const seats = Array.from({ length: 30 }, (_, index) => ({
     id: (index + 1).toString(),
   })).concat([
@@ -89,7 +88,6 @@ const SeatSelectionScreen = ({ route }) => {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={[styles.header, { backgroundColor: '#003580' }]}>
         <TouchableOpacity
           style={styles.backButton}
@@ -190,7 +188,6 @@ const SeatSelectionScreen = ({ route }) => {
               );
             })}
 
-            {/* Last row: 5 seats straight */}
             <View style={styles.lastRow}>
               {seats.slice(30).map((seat) => (
                 <TouchableOpacity
@@ -216,7 +213,6 @@ const SeatSelectionScreen = ({ route }) => {
           </View>
         </View>
 
-        {/* Summary */}
         <View style={styles.summaryContainer}>
           <Text style={styles.summaryTitle}>Booking Summary</Text>
           <Text>Selected Seats: {selectedSeats.map((s) => s.id).join(', ') || 'None'}</Text>
@@ -226,7 +222,6 @@ const SeatSelectionScreen = ({ route }) => {
         </View>
       </ScrollView>
 
-      {/* Confirm Button */}
       <TouchableOpacity
         style={[
           styles.confirmButton,

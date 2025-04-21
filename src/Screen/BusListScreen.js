@@ -2,50 +2,50 @@ import React, { Component } from 'react';
 import { Text, StyleSheet, View, FlatList, TouchableOpacity } from 'react-native';
 
 export default class BusListScreen extends Component {
-  // Function to handle bus selection
   handleBusSelect = (bus) => {
-    console.log('Selected Bus:', bus); // Debugging
-    this.props.navigation.navigate('SeatSelectionScreen', {
+    const { from, to, selectedDate } = this.props.route.params;
+
+    const busDetails = {
       busId: bus.id,
-      from: bus.from,
-      to: bus.to,
-      date: bus.date,
-      busDetails: bus,
-    });
+      busName: bus.name,
+      busNumber: bus.number,
+      departureTime: bus.time,
+      price: bus.price,
+      from,
+      to,
+      date: selectedDate,
+    };
+
+    console.log('Selected Bus Details:', busDetails);
+
+    this.props.navigation.navigate('SeatSelectionScreen', busDetails);
   };
 
-  // Render each bus item
   renderBusItem = ({ item }) => (
     <TouchableOpacity
       style={styles.busItem}
-      onPress={() => this.handleBusSelect(item)} // Make the bus item selectable
+      onPress={() => this.handleBusSelect(item)}
     >
-      <Text style={styles.busName}>{item.busName}</Text>
-      <Text style={styles.busDetails}>Departure: {item.departureTime}</Text>
-      <Text style={styles.busDetails}>From: {item.from}</Text>
-      <Text style={styles.busDetails}>To: {item.to}</Text>
-      <Text style={styles.busDetails}>Date: {item.date}</Text>
+      <Text style={styles.busName}>{item.name}</Text>
+      <Text style={styles.busDetails}>Number: {item.number}</Text>
+      <Text style={styles.busDetails}>Departure: {item.time}</Text>
+      <Text style={styles.busDetails}>Price: ₹{item.price}</Text>
     </TouchableOpacity>
   );
 
   render() {
-    const { busData } = this.props.route.params; // Get busData from navigation params
-    console.log('Received busData:', busData); // Debug log
-
-    // Ensure each bus has a unique key
-    const uniqueBusData = busData.map((bus, index) => ({
-      ...bus,
-      uniqueId: `${bus.id}-${index}`, // Create a unique ID for each bus
-    }));
+    const { buses = [], from, to } = this.props.route.params;
 
     return (
       <View style={styles.container}>
-        <Text style={styles.header}>Available Buses</Text>
-        {busData.length > 0 ? (
+        <Text style={styles.header}>
+          Buses from {from} to {to}
+        </Text>
+        {buses.length > 0 ? (
           <FlatList
-            data={uniqueBusData} // Use the modified busData with unique IDs
+            data={buses}
             renderItem={this.renderBusItem}
-            keyExtractor={(item) => item.uniqueId} // Use the uniqueId as the key
+            keyExtractor={(item) => item.id}
           />
         ) : (
           <Text style={styles.noBusesText}>No buses available</Text>
@@ -62,24 +62,27 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   header: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: 15,
     textAlign: 'center',
+    color: '#003580',
   },
   busItem: {
     padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    marginBottom: 15,
+    backgroundColor: '#f9f9f9',
   },
   busName: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#003580',
   },
   busDetails: {
     fontSize: 14,
-    color: '#555',
+    color: '#444',
     marginTop: 5,
   },
   noBusesText: {

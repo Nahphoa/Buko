@@ -1,7 +1,8 @@
+// App.js
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
-import { AuthProvider } from './src/context/AuthContext';
 import StackNavigator from './StackNavigator';
+import { AuthProvider } from './src/context/AuthContext';  // ✅ correct import path
 
 export default function App() {
   return (

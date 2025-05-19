@@ -2,7 +2,7 @@ import { StyleSheet, Text, TextInput, TouchableOpacity, View, Image, KeyboardAvo
 import React from 'react';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import FontAwesome from 'react-native-vector-icons/FontAwesome'; // For Facebook and Google icons
-import { auth } from '../firebaseConfig';
+import { auth } from './firebaseConfig';
 import { createUserWithEmailAndPassword, PhoneAuthProvider, signInWithCredential } from "firebase/auth";
 import { useState } from 'react';
 

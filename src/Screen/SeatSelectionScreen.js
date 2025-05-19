@@ -11,11 +11,9 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { useAuth } from '../context/AuthContext';
 
 const SeatSelectionScreen = ({ route }) => {
   const navigation = useNavigation();
-  const { user } = useAuth();
 
   const {
     busId = '',
@@ -70,18 +68,11 @@ const SeatSelectionScreen = ({ route }) => {
       seatCount: selectedSeats.length,
     };
 
-    if (!user) {
-      navigation.navigate('RegistrationScreen', {
-        redirectTo: 'BookingDetailsScreen',
-        bookingDetails: bookingData,
-      });
-    } else {
-      setLoading(true);
-      setTimeout(() => {
-        setLoading(false);
-        navigation.navigate('BookingDetailsScreen', bookingData);
-      }, 1000);
-    }
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      navigation.navigate('BookingDetailsScreen', bookingData);
+    }, 1000);
   };
 
   const totalPrice = selectedSeats.length * price;
@@ -234,7 +225,7 @@ const SeatSelectionScreen = ({ route }) => {
           <ActivityIndicator color="#fff" />
         ) : (
           <Text style={styles.confirmText}>
-            {user ? 'Confirm Your Details' : 'Register to Book'}
+            Confirm Your Details
           </Text>
         )}
       </TouchableOpacity>

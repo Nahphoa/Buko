@@ -115,7 +115,7 @@ const BookingDetailsScreen = ({ navigation, route }) => {
 
   return (
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-      <Text style={styles.header}>Booking Details</Text>
+      {/* Removed Duplicate Header Text */}
 
       {passengers.map((passenger, index) => (
         <View key={index} style={styles.passengerCard}>
@@ -135,7 +135,7 @@ const BookingDetailsScreen = ({ navigation, route }) => {
           <Text style={styles.sectionTitle}>Add Passenger {passengers.length + 1}</Text>
           {[{ field: 'name', label: 'Full Name*', placeholder: 'John Doe' },
             { field: 'phone', label: 'Phone*', placeholder: '0712345678', keyboardType: 'phone-pad' },
-            { field: 'age', label: 'Age*', placeholder: '25', keyboardType: 'numeric' }
+            { field: 'age', label: 'Age*', placeholder: '00', keyboardType: 'numeric' }
           ].map(({ field, label, placeholder, keyboardType }) => (
             <View key={field} style={styles.formGroup}>
               <Text style={styles.label}>{label}</Text>
@@ -217,13 +217,6 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 40,
     backgroundColor: '#fff',
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
-    color: '#003580',
   },
   passengerCard: {
     backgroundColor: '#f8f9fa',

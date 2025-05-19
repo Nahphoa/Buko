@@ -23,46 +23,43 @@ const SearchBusScreen = ({ route }) => {
 
   const getTimings = (from, to) => {
     const routeTimings = {
-      'Mon-Dimapur': { departureTime: '4:30 PM', arrivalTime: '5:00 AM', number: "NL 01 2476" },
-      'Dimapur-Mon': { departureTime: '4:30 PM', arrivalTime: '5:00 AM', number: "NL 07 5836" },
-      'Mon-Kohima': { departureTime: '4:30 PM', arrivalTime: '6:00 AM', number: "NL 04 9031" },
-      'Kohima-Mon': { departureTime: '3:00 PM', arrivalTime: '5:00 AM', number: "NL 07 5836" },
-      'Mon-Tuensang': { departureTime: '4:00 PM', arrivalTime: '7:30 AM', number: "NL 01 2476" },
-      'Tuensang-Mon': { departureTime: '4:00 PM', arrivalTime: '7:30 AM', number: "NL 07 5836" },
-      'Mon-Mokokchung': { departureTime: '3:30 PM', arrivalTime: '6:00 AM', number: "NL 02 2299" },
-      'Mokokchung-Mon': { departureTime: '3:30 PM', arrivalTime: '6:00 AM', number: "NL 05 1077" },
-      'Mon-Wokha': { departureTime: '4:00 PM', arrivalTime: '5:30 AM', number: "NL 06 4321" },
-      'Wokha-Mon': { departureTime: '4:00 PM', arrivalTime: '5:30 AM', number: "NL 06 5543" },
-      'Mon-Phek': { departureTime: '4:30 PM', arrivalTime: '6:30 AM', number: "NL 09 7733" },
-      'Phek-Mon': { departureTime: '4:30 PM', arrivalTime: '6:30 AM', number: "NL 03 2277" },
-      'Mon-Longleng': { departureTime: '3:00 PM', arrivalTime: '4:30 AM', number: "NL 01 8888" },
-      'Longleng-Mon': { departureTime: '3:00 PM', arrivalTime: '4:30 AM', number: "NL 07 1212" },
-      'Dimapur-Kohima': { departureTime: '2:30 PM', arrivalTime: '5:00 PM', number: "NL 07 5836" },
-      'Kohima-Dimapur': { departureTime: '3:00 PM', arrivalTime: '5:30 PM', number: "NL 05 9999" },
-      'Tuensang-Mokokchung': { departureTime: '4:00 PM', arrivalTime: '6:00 AM', number: "NL 03 3434" },
-      'Mokokchung-Tuensang': { departureTime: '4:00 PM', arrivalTime: '6:00 AM', number: "NL 04 5678" },
-      'Wokha-Phek': { departureTime: '5:00 PM', arrivalTime: '7:00 AM', number: "NL 09 3434" },
-      'Phek-Wokha': { departureTime: '5:00 PM', arrivalTime: '7:00 AM', number: "NL 10 7777" },
-      'Longleng-Tuensang': { departureTime: '4:15 PM', arrivalTime: '6:30 AM', number: "NL 11 5566" },
-      'Tuensang-Longleng': { departureTime: '4:15 PM', arrivalTime: '6:30 AM', number: "NL 12 7788" },
+      'Kohima-Mon': [
+        { departureTime: '6:00 AM', arrivalTime: '5:30 PM', number: 'NL 07 5836' },
+        { departureTime: '3:00 PM', arrivalTime: '5:00 AM', number: 'NL 08 1234' },
+        { departureTime: '7:00 PM', arrivalTime: '7:00 AM', number: 'NL 09 5678' },
+      ],
+      'Mon-Kohima': [
+        { departureTime: '5:30 AM', arrivalTime: '4:30 PM', number: 'NL 07 8888' },
+        { departureTime: '4:30 PM', arrivalTime: '6:00 AM', number: 'NL 04 9031' },
+      ],
+      'Dimapur-Mon': [
+        { departureTime: '4:30 PM', arrivalTime: '5:00 AM', number: 'NL 07 5836' },
+        { departureTime: '6:00 AM', arrivalTime: '6:00 PM', number: 'NL 02 2222' },
+      ],
+      // Add more routes with arrays of unique timings
     };
 
     const key = `${from}-${to}`;
-    return routeTimings[key] || { departureTime: '4:30 PM', arrivalTime: 'Unknown', number: 'N/A' };
+    return routeTimings[key] || [
+      { departureTime: '4:30 PM', arrivalTime: 'Unknown', number: 'N/A' },
+    ];
   };
 
-  const timing = getTimings(from, to);
+  const routeTimingList = getTimings(from, to);
 
-  const uniqueBusData = (busData || []).map((bus, index) => ({
-    ...bus,
-    uniqueId: `${bus.id}-${index}`,
-    departureTime: timing.departureTime,
-    arrivalTime: timing.arrivalTime,
-    busNumber: timing.number,
-    from,
-    to,
-    date: selectedDate,
-  }));
+  const uniqueBusData = (busData || []).map((bus, index) => {
+    const timing = routeTimingList[index % routeTimingList.length];
+    return {
+      ...bus,
+      uniqueId: `${bus.id}-${index}`,
+      departureTime: timing.departureTime,
+      arrivalTime: timing.arrivalTime,
+      busNumber: timing.number,
+      from,
+      to,
+      date: selectedDate,
+    };
+  });
 
   const handleBusSelect = (bus) => {
     navigation.navigate('SeatSelectionScreen', {

@@ -16,6 +16,9 @@ import SignUpScreen from './src/screen/SignUpScreen';
 import BusListScreen from './src/screen/BusListScreen';
 import Bookyseat from './src/screen/Bookyseat';
 import BookingMenu from './src/screen/BookingMenu';
+import ForgotPasswordScreen from './src/screen/ForgotPasswordScreen';
+import TicketFormScreen from './src/screen/TicketFormScreen';
+import PaymentScreen from './src/screen/PaymentScreen';
 
 const StackNavigator = () => {
   const MyTabs = createBottomTabNavigator();
@@ -47,8 +50,10 @@ const StackNavigator = () => {
         <MyTabs.Screen name="Bookings"
           component={BookingScreen} options={{
             tabBarLabel: "Bookings",
-            headerShown: false, tabBarIcon: ({ focused }) => focused ? (
-              <Entypo name="ticket" size={24} color="#003580" />
+            headerShown: false,
+             tabBarIcon: ({ focused }) => focused ? (
+              <Entypo name="ticket" 
+              size={24} color="#003580" /> 
             ) : (
               <Ionicons name="ticket-outline" size={24} color="black" />
             )
@@ -60,15 +65,21 @@ const StackNavigator = () => {
   return (
     <NavigationContainer>
     <Stack.Navigator>
-      <Stack.Screen name="Main" component={BottomTabs}/>
+      <Stack.Screen name="Main" component={BottomTabs} option={{headerShown:false}}/>
       <Stack.Screen name="Home" component={HomeScreen} />
       <Stack.Screen name="SelectRoute" component={SelectRouteScreen} />
       
       <Stack.Screen name ="SignUp" component={SignUpScreen} />
+      <Stack.Screen name ="Login" component={LoginScreen}options={{headerShown:true}} />
+      <Stack.Screen name ="ForgotPassword" component={ForgotPasswordScreen} />
+
       <Stack.Screen name ="BusList" component={BusListScreen}/>
       <Stack.Screen name ="Bookyseat" component={Bookyseat}/>
       <Stack.Screen name ="Booking" component={BookingScreen} option ={{headerShown:false}} />
-      
+      <Stack.Screen name="TicketForm" component={TicketFormScreen}/>
+      <Stack.Screen name="Payment" component={PaymentScreen}/>
+       
+
     </Stack.Navigator>
     </NavigationContainer>
   )

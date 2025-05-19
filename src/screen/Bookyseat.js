@@ -1,14 +1,21 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Image, Alert } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+  Alert,
+} from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { auth } from "../firebaseConfig"; // Make sure the path is correct
+import { auth } from "../firebaseConfig";
 
 const Bookyseat = ({ route }) => {
   const navigation = useNavigation();
-  const { busName, price } = route.params;
+  const { busName, price = 0, totalSeats, busId } = route.params || {};
+  const parsedTotalSeats = Number(totalSeats) || 40;
 
-  const totalSeats = 39;
-  const reservedSeats = []; // Add reserved seats here if needed
+  const reservedSeats = []; // Add any reserved seat numbers here
   const [selectedSeats, setSelectedSeats] = useState([]);
 
   const toggleSeatSelection = (seatNumber) => {
@@ -26,16 +33,25 @@ const Bookyseat = ({ route }) => {
       return;
     }
 
+    const bookingData = {
+      busName,
+      price,
+      selectedSeats,
+      totalPrice: selectedSeats.length * price,
+      busId,
+    };
+
     const user = auth.currentUser;
 
     if (!user) {
-      navigation.navigate("SignUp"); // Navigates to SignUp screen if user not logged in
+      // Redirect to signup if not logged in
+      navigation.navigate("SignUp", {
+        redirectTo: "TicketFormScreen",
+        bookingData,
+      });
     } else {
-      Alert.alert(
-        "Booking Confirmed",
-        `Seats booked: ${selectedSeats.join(", ")}\nTotal: ₹${selectedSeats.length * price}`
-      );
-      setSelectedSeats([]); // Clear selection after booking
+      // Go to ticket form if logged in
+      navigation.navigate("TicketForm", { bookingData });
     }
   };
 
@@ -43,32 +59,38 @@ const Bookyseat = ({ route }) => {
 
   const seatRows = [];
   let seatNum = 1;
-  for (let i = 0; i < 9; i++) {
-    seatRows.push([seatNum++, "aisle", seatNum++, seatNum++]);
+  while (seatNum <= parsedTotalSeats) {
+    const row = [];
+    if (seatNum <= parsedTotalSeats) row.push(seatNum++);
+    if (seatNum <= parsedTotalSeats) row.push(seatNum++);
+    row.push("aisle");
+    if (seatNum <= parsedTotalSeats) row.push(seatNum++);
+    if (seatNum <= parsedTotalSeats) row.push(seatNum++);
+    seatRows.push(row);
   }
-  seatRows.push([seatNum++, seatNum++, seatNum++, seatNum++]);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>({busName})</Text>
+      <Text style={styles.title}>{busName}</Text>
 
-      {/* Seat Layout Box */}
       <View style={styles.layoutBox}>
         <View style={styles.layoutHeader}>
           <View style={styles.lowerLabelContainer}>
             <Text style={styles.layoutLabel}>Lower</Text>
-            <Image source={require("../assets/steering.jpg")} style={styles.steeringIcon} />
+            <Image
+              source={require("../assets/steering.jpg")}
+              style={styles.steeringIcon}
+            />
           </View>
         </View>
 
-        {/* Seat Layout */}
         {seatRows.map((row, rowIndex) => (
           <View key={rowIndex} style={styles.row}>
             {row.map((item, index) =>
               item === "aisle" ? (
                 <View key={index} style={styles.aisleSpace} />
               ) : (
-                <View key={`${route.params.busId}-${item}`} style={styles.seatWrapper}>
+                <View key={`${busId || "bus"}-${item}`} style={styles.seatWrapper}>
                   <TouchableOpacity
                     style={[
                       styles.seat,
@@ -92,12 +114,10 @@ const Bookyseat = ({ route }) => {
         ))}
       </View>
 
-      {/* Total Price */}
       <Text style={styles.totalPrice}>Total Price: ₹{totalPrice}</Text>
 
-      {/* Book Button */}
       <TouchableOpacity style={styles.bookButton} onPress={handleBookNow}>
-        <Text style={styles.buttonText}>Book Now</Text>
+        <Text style={styles.buttonText}>Proceed</Text>
       </TouchableOpacity>
     </View>
   );
@@ -115,7 +135,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: "bold",
-    marginBottom: 5,
+    marginBottom: 10,
   },
   layoutBox: {
     borderWidth: 1,
@@ -129,7 +149,7 @@ const styles = StyleSheet.create({
   },
   layoutHeader: {
     width: "100%",
-    marginBottom: 50,
+    marginBottom: 40,
   },
   lowerLabelContainer: {
     flexDirection: "row",
@@ -143,11 +163,12 @@ const styles = StyleSheet.create({
   steeringIcon: {
     width: 40,
     height: 50,
-    marginLeft: 130,
+    marginLeft: "auto",
   },
   row: {
     flexDirection: "row",
     justifyContent: "center",
+    alignItems: "center",
     marginBottom: 10,
   },
   seatWrapper: {

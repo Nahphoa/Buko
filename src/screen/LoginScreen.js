@@ -1,23 +1,10 @@
 import {
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Alert,
+  StyleSheet,Text,TextInput,TouchableOpacity,View,Image,KeyboardAvoidingView, Platform,ScrollView,Alert,
 } from 'react-native';
 import React, { useState } from 'react';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import { auth } from '../firebaseConfig';
-import {
-  signInWithEmailAndPassword,
-  PhoneAuthProvider,
-  signInWithCredential,
+import {signInWithEmailAndPassword,PhoneAuthProvider,signInWithCredential,
 } from 'firebase/auth';
 
 const LoginScreen = ({ navigation }) => {
@@ -29,7 +16,7 @@ const LoginScreen = ({ navigation }) => {
 
   const handleEmailLogin = () => {
     signInWithEmailAndPassword(auth, email, password)
-      .then(() => Alert.alert('Success', 'Logged in with email!'))
+      .then(() => Alert.alert('Succesfully', 'Login with email!'))
       .catch((error) => Alert.alert('Error', error.message));
   };
 
@@ -80,7 +67,7 @@ const LoginScreen = ({ navigation }) => {
             <TextInput
               style={styles.textInput}
               placeholder="Enter your email"
-              placeholderTextColor="#999"
+              placeholderTextColor="#000000"
               keyboardType="email-address"
               autoCapitalize="none"
               value={email}
@@ -94,7 +81,7 @@ const LoginScreen = ({ navigation }) => {
             <TextInput
               style={styles.textInput}
               placeholder="Enter your password"
-              placeholderTextColor="#999"
+              placeholderTextColor="#000000"
               secureTextEntry
               autoCapitalize="none"
               value={password}
@@ -114,19 +101,6 @@ const LoginScreen = ({ navigation }) => {
           <TouchableOpacity style={styles.button} onPress={handleEmailLogin}>
             <Text style={styles.buttonText}>Login</Text>
           </TouchableOpacity>
-
-          {/* Social Login Buttons */}
-          <View style={styles.socialLoginContainer}>
-            <TouchableOpacity style={styles.socialButton}>
-              <FontAwesome name="google" size={24} color="#DB4437" style={styles.socialIcon} />
-              <Text style={styles.socialButtonText}>Login with Google</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.socialButton}>
-              <FontAwesome name="facebook" size={24} color="#4267B2" style={styles.socialIcon} />
-              <Text style={styles.socialButtonText}>Login with Facebook</Text>
-            </TouchableOpacity>
-          </View>
 
           {/* Sign Up Link */}
           <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
@@ -173,7 +147,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
-    borderColor: '#ccc',
+    borderColor: '#000000',
     borderWidth: 1,
     borderRadius: 5,
     paddingHorizontal: 10,
@@ -208,28 +182,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
-  },
-  socialLoginContainer: {
-    width: '100%',
-    marginTop: 20,
-  },
-  socialButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-    height: 50,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 5,
-    marginBottom: 10,
-  },
-  socialIcon: {
-    marginRight: 10,
-  },
-  socialButtonText: {
-    fontSize: 16,
-    color: '#000',
   },
   signUpText: {
     marginTop: 15,

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity,Alert, View } from 'react-native';
 import CalendarComponent from '../components/CalendarComponent';
 
 const HomeScreen = ({ navigation, route }) => {
@@ -13,17 +13,24 @@ const HomeScreen = ({ navigation, route }) => {
   }, [route.params]);
 
   const handleSearch = () => {
+    if (!selectedDate){
+      Alert.alert("Missing Date", "Please select a date of travel");
+    return;
+    }
     console.log('Searching for buses...');
     console.log('From:', from);
     console.log('To:', to);
     console.log('Date:', selectedDate);
 
     navigation.navigate("BusList", { from, to, selectedDate });
+
   };
 
   return (
     <View style={styles.container}>
       <Image source={require("../assets/logo.png")} style={styles.logo} />
+     
+    
 
       {/* FROM FIELD */}
       <TouchableOpacity 

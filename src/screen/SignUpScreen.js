@@ -58,7 +58,7 @@ const SignUpScreen = ({ navigation }) => {
           <TextInput
             style={styles.textInput}
             placeholder="Enter your username"
-            placeholderTextColor="#999"
+            placeholderTextColor="#000000"
             autoCapitalize="none"
             value={username}
             onChangeText={setUsername}
@@ -71,7 +71,7 @@ const SignUpScreen = ({ navigation }) => {
           <TextInput
             style={styles.textInput}
             placeholder="Enter your email"
-            placeholderTextColor="#999"
+            placeholderTextColor="#000000"
             keyboardType="email-address"
             autoCapitalize="none"
             value={email}
@@ -85,7 +85,7 @@ const SignUpScreen = ({ navigation }) => {
           <TextInput
             style={styles.textInput}
             placeholder="Enter your phone number"
-            placeholderTextColor="#999"
+            placeholderTextColor="#000000"
             keyboardType="phone-pad"
             value={phoneNumber}
             onChangeText={setPhoneNumber}
@@ -98,7 +98,7 @@ const SignUpScreen = ({ navigation }) => {
           <TextInput
             style={styles.textInput}
             placeholder="Enter your password"
-            placeholderTextColor="#999"
+            placeholderTextColor="#000000"
             secureTextEntry={!passwordVisible}
             value={password}
             onChangeText={setPassword}
@@ -114,7 +114,7 @@ const SignUpScreen = ({ navigation }) => {
           <TextInput
             style={styles.textInput}
             placeholder="Confirm your password"
-            placeholderTextColor="#999"
+            placeholderTextColor="#000000"
             secureTextEntry={!confirmPasswordVisible}
             value={confirmPassword}
             onChangeText={setConfirmPassword}
@@ -126,11 +126,11 @@ const SignUpScreen = ({ navigation }) => {
 
         {/* DOB */}
         <View style={styles.inputContainer}>
-          <Ionicons name="calendar-outline" size={24} color="#003580" style={styles.icon} />
+          <Ionicons name="calendar-outline" size={24} color="#000000" style={styles.icon} />
           <TextInput
             style={styles.textInput}
             placeholder="Date of Birth (DD/MM/YYYY)"
-            placeholderTextColor="#999"
+            placeholderTextColor="#000000"
             value={dob}
             onChangeText={setDob}
           />
@@ -172,18 +172,18 @@ export default SignUpScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFE4C4',
+    backgroundColor: '#40E0D0',
   },
   scrollContainer: {
     padding: 20,
-    paddingTop: 60,
-    paddingBottom: 40,
+    paddingTop: 80,
+    paddingBottom: 50,
     alignItems: 'center',
   },
   logo: {
     width: 100,
     height: 120,
-    marginBottom: 20,
+    marginBottom: 10,
   },
   textContainer: {
     marginBottom: 30,
@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
-    borderColor: '#ccc',
+    borderColor: '#000000',
     borderWidth: 1,
     borderRadius: 5,
     marginBottom: 10,

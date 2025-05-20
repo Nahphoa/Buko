@@ -10,10 +10,11 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 
-const SeatSelectionScreen = ({ route }) => {
+const SeatSelectionScreen = () => {
   const navigation = useNavigation();
+  const route = useRoute();
 
   const {
     busId = '',
@@ -23,20 +24,31 @@ const SeatSelectionScreen = ({ route }) => {
     busName = 'Express Bus',
     price = 900,
     departureTime = '4:30 PM',
+    user = {},
   } = route.params || {};
 
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const seats = Array.from({ length: 30 }, (_, index) => ({
-    id: (index + 1).toString(),
-  })).concat([
-    { id: '31' },
-    { id: '32' },
-    { id: '33' },
-    { id: '34' },
-    { id: '35' },
-  ]);
+  // Generate seats in a structured row layout
+  const rows = [];
+  let seatNumber = 1;
+
+  // 10 rows of 3 seats (1 single + 2 double)
+  for (let i = 0; i < 10; i++) {
+    rows.push([
+      { id: seatNumber.toString(), type: 'single' },
+      { id: (seatNumber + 1).toString(), type: 'double-left' },
+      { id: (seatNumber + 2).toString(), type: 'double-right' },
+    ]);
+    seatNumber += 3;
+  }
+
+  // Last row with 5 seats
+  const lastRow = [];
+  for (let i = 0; i < 5; i++) {
+    lastRow.push({ id: (seatNumber + i).toString(), type: 'last-row' });
+  }
 
   const handleSeatSelection = (seat) => {
     if (selectedSeats.some((s) => s.id === seat.id)) {
@@ -57,261 +69,237 @@ const SeatSelectionScreen = ({ route }) => {
     }
 
     const bookingData = {
-      busId,
-      from,
-      to,
-      date,
-      busName,
-      departureTime,
+      busData: {
+        busId,
+        busName,
+        from,
+        to,
+        date,
+        departureTime,
+        fare: price,
+      },
       selectedSeats: selectedSeats.map((s) => s.id),
-      totalPrice: selectedSeats.length * price,
-      seatCount: selectedSeats.length,
+      user,
     };
 
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
       navigation.navigate('BookingDetailsScreen', bookingData);
-    }, 1000);
+    }, 500);
   };
 
   const totalPrice = selectedSeats.length * price;
 
+  const renderSeat = (seat) => {
+    const isSelected = selectedSeats.some((s) => s.id === seat.id);
+    const isBooked = Math.random() < 0.2; // simulate bookings
+
+    return (
+      <TouchableOpacity
+        key={seat.id}
+        style={[
+          styles.seat,
+          styles[seat.type],
+          isBooked && styles.bookedSeat,
+          isSelected && styles.selectedSeat,
+        ]}
+        onPress={() => !isBooked && handleSeatSelection(seat)}
+        disabled={isBooked}
+      >
+        <Text style={styles.seatText}>{seat.id}</Text>
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <View style={styles.container}>
-      <View style={[styles.header, { backgroundColor: '#003580' }]}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="arrow-back" size={24} color="white" />
-        </TouchableOpacity>
-
-        <View style={styles.headerContent}>
-          <Text style={styles.busName}>{busName}</Text>
-          <Text style={styles.route}>{from} → {to}</Text>
-          <Text style={styles.date}>{date}</Text>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={24} color="black" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Select Seats</Text>
+          <View style={{ width: 24 }} />
         </View>
-      </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.seatContainer}>
-          <Text style={styles.deckLabel}>Lower Deck</Text>
+        <View style={styles.busInfoContainer}>
+          <Text style={styles.busName}>{busName}</Text>
+          <View style={styles.routeContainer}>
+            <Text style={styles.routeText}>{from}</Text>
+            <MaterialCommunityIcons name="arrow-right" size={20} color="gray" />
+            <Text style={styles.routeText}>{to}</Text>
+          </View>
+          <Text style={styles.departureText}>
+            {date} • {departureTime}
+          </Text>
+        </View>
 
-          <MaterialCommunityIcons
-            name="steering"
-            size={30}
-            color="#555"
-            style={{ alignSelf: 'center', marginBottom: 10 }}
-          />
-
-          <View style={styles.seatLayout}>
-            {Array.from({ length: 10 }).map((_, index) => {
-              const seat1 = seats[index * 3];
-              const seat2 = seats[index * 3 + 1];
-              const seat3 = seats[index * 3 + 2];
-
-              return (
-                <View key={`row-${index}`} style={styles.seatRow}>
-                  <View style={styles.singleSeat}>
-                    {seat1 && (
-                      <TouchableOpacity
-                        style={[
-                          styles.seat,
-                          selectedSeats.some((s) => s.id === seat1.id) && styles.selectedSeat,
-                        ]}
-                        onPress={() => handleSeatSelection(seat1)}
-                        disabled={loading}
-                      >
-                        <Text
-                          style={[
-                            styles.seatText,
-                            selectedSeats.some((s) => s.id === seat1.id) && styles.selectedSeatText,
-                          ]}
-                        >
-                          {seat1.id}
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-
-                  <View style={styles.doubleSeat}>
-                    {seat2 && (
-                      <TouchableOpacity
-                        style={[
-                          styles.seat,
-                          selectedSeats.some((s) => s.id === seat2.id) && styles.selectedSeat,
-                        ]}
-                        onPress={() => handleSeatSelection(seat2)}
-                        disabled={loading}
-                      >
-                        <Text
-                          style={[
-                            styles.seatText,
-                            selectedSeats.some((s) => s.id === seat2.id) && styles.selectedSeatText,
-                          ]}
-                        >
-                          {seat2.id}
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-                    {seat3 && (
-                      <TouchableOpacity
-                        style={[
-                          styles.seat,
-                          selectedSeats.some((s) => s.id === seat3.id) && styles.selectedSeat,
-                        ]}
-                        onPress={() => handleSeatSelection(seat3)}
-                        disabled={loading}
-                      >
-                        <Text
-                          style={[
-                            styles.seatText,
-                            selectedSeats.some((s) => s.id === seat3.id) && styles.selectedSeatText,
-                          ]}
-                        >
-                          {seat3.id}
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                </View>
-              );
-            })}
-
-            <View style={styles.lastRow}>
-              {seats.slice(30).map((seat) => (
-                <TouchableOpacity
-                  key={seat.id}
-                  style={[
-                    styles.seat,
-                    selectedSeats.some((s) => s.id === seat.id) && styles.selectedSeat,
-                  ]}
-                  onPress={() => handleSeatSelection(seat)}
-                  disabled={loading}
-                >
-                  <Text
-                    style={[
-                      styles.seatText,
-                      selectedSeats.some((s) => s.id === seat.id) && styles.selectedSeatText,
-                    ]}
-                  >
-                    {seat.id}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+        <View style={styles.seatLegend}>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendColor, styles.availableColor]} />
+            <Text style={styles.legendText}>Available</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendColor, styles.selectedColor]} />
+            <Text style={styles.legendText}>Selected</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendColor, styles.bookedColor]} />
+            <Text style={styles.legendText}>Booked</Text>
           </View>
         </View>
 
-        <View style={styles.summaryContainer}>
-          <Text style={styles.summaryTitle}>Booking Summary</Text>
-          <Text>Selected Seats: {selectedSeats.map((s) => s.id).join(', ') || 'None'}</Text>
-          <Text style={{ fontWeight: 'bold', fontSize: 16 }}>
-            Total Price: ₹{totalPrice}
-          </Text>
+        <View style={styles.seatMap}>
+          <View style={styles.driverSeat}>
+            <MaterialCommunityIcons name="steering" size={30} color="gray" />
+          </View>
+
+          {/* Render seat rows */}
+          {rows.map((row, index) => (
+            <View key={index} style={styles.seatRow}>
+              <View style={styles.singleSeatWrapper}>{renderSeat(row[0])}</View>
+              <View style={styles.doubleSeatWrapper}>
+                {renderSeat(row[1])}
+                {renderSeat(row[2])}
+              </View>
+            </View>
+          ))}
+
+          {/* Last row */}
+          <View style={styles.lastRow}>
+            {lastRow.map((seat) => renderSeat(seat))}
+          </View>
         </View>
       </ScrollView>
 
-      <TouchableOpacity
-        style={[
-          styles.confirmButton,
-          (selectedSeats.length === 0 || loading) && styles.disabledButton,
-        ]}
-        onPress={confirmBooking}
-        disabled={selectedSeats.length === 0 || loading}
-      >
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.confirmText}>
-            Confirm Your Details
-          </Text>
-        )}
-      </TouchableOpacity>
+      <View style={styles.footer}>
+        <View style={styles.priceContainer}>
+          <Text style={styles.priceLabel}>Total Price:</Text>
+          <Text style={styles.priceValue}>Rs. {totalPrice}</Text>
+        </View>
+        <TouchableOpacity
+          style={styles.bookButton}
+          onPress={confirmBooking}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text style={styles.bookButtonText}>Confirm Booking</Text>
+          )}
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#E6F0FF' },
-  scrollContent: { paddingBottom: 20 },
-  header: { height: 160, padding: 20, justifyContent: 'flex-end' },
-  backButton: {
-    position: 'absolute',
-    top: 50,
-    left: 20,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    borderRadius: 20,
-    padding: 5,
-    zIndex: 10,
-  },
-  headerContent: { marginBottom: 10 },
-  busName: { fontSize: 22, fontWeight: 'bold', color: 'white' },
-  route: { fontSize: 16, color: 'white' },
-  date: { fontSize: 14, color: 'white' },
-  seatContainer: {
-    backgroundColor: 'white',
-    margin: 15,
+  container: { flex: 1, backgroundColor: '#fff' },
+  scrollContainer: { paddingBottom: 100 },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     padding: 15,
-    borderRadius: 12,
-    elevation: 2,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
-  deckLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#555',
-    marginBottom: 10,
-    textAlign: 'center',
+  headerTitle: { fontSize: 18, fontWeight: 'bold' },
+  busInfoContainer: {
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
-  seatLayout: { alignItems: 'center' },
+  busName: { fontSize: 16, fontWeight: 'bold', marginBottom: 5 },
+  routeContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 5 },
+  routeText: { fontSize: 14, marginHorizontal: 5 },
+  departureText: { fontSize: 12, color: 'gray' },
+  seatLegend: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    padding: 15,
+  },
+  legendItem: { flexDirection: 'row', alignItems: 'center' },
+  legendColor: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    marginRight: 5,
+  },
+  availableColor: { backgroundColor: '#e0e0e0' },
+  selectedColor: { backgroundColor: '#4CAF50' },
+  bookedColor: { backgroundColor: '#F44336' },
+  legendText: { fontSize: 12 },
+  seatMap: { padding: 15 },
+  driverSeat: { alignItems: 'center', marginBottom: 20 },
   seatRow: {
     flexDirection: 'row',
-    marginVertical: 8,
     justifyContent: 'space-between',
-    width: '80%',
+    marginBottom: 10,
+    alignItems: 'center',
   },
-  singleSeat: { width: '30%', alignItems: 'flex-start' },
-  doubleSeat: { flexDirection: 'row', gap: 10, width: '60%', justifyContent: 'flex-end' },
+  singleSeatWrapper: { marginRight: 20 },
+  doubleSeatWrapper: { flexDirection: 'row' },
   seat: {
     width: 40,
     height: 40,
-    marginHorizontal: 5,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: '#4CAF50',
+    margin: 4,
+    borderRadius: 5,
+    backgroundColor: '#e0e0e0',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  seatText: { fontWeight: '600', fontSize: 12, color: '#333' },
-  selectedSeat: {
-    backgroundColor: '#4CAF50',
-    borderColor: '#388E3C',
+  single: {},
+  'double-left': {
+    marginRight: 0,
+    borderTopRightRadius: 0,
+    borderBottomRightRadius: 0,
   },
-  selectedSeatText: { color: 'white' },
+  'double-right': {
+    marginLeft: 0,
+    borderTopLeftRadius: 0,
+    borderBottomLeftRadius: 0,
+  },
+  'last-row': {
+    marginHorizontal: 4,
+  },
+  selectedSeat: { backgroundColor: '#4CAF50' },
+  bookedSeat: { backgroundColor: '#F44336' },
+  seatText: { fontSize: 12, fontWeight: 'bold' },
   lastRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 16,
+    marginTop: 20,
     flexWrap: 'wrap',
   },
-  summaryContainer: {
+  footer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     backgroundColor: 'white',
-    margin: 15,
-    padding: 20,
-    borderRadius: 10,
-    elevation: 2,
-  },
-  summaryTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10 },
-  confirmButton: {
-    backgroundColor: '#003580',
-    padding: 16,
-    margin: 15,
-    borderRadius: 10,
+    padding: 15,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
-  confirmText: { color: 'white', fontSize: 18, fontWeight: 'bold' },
-  disabledButton: { opacity: 0.5 },
+  priceContainer: { flexDirection: 'column' },
+  priceLabel: { fontSize: 14, color: 'gray' },
+  priceValue: { fontSize: 18, fontWeight: 'bold' },
+  bookButton: {
+    backgroundColor: '#4CAF50',
+    paddingVertical: 12,
+    paddingHorizontal: 25,
+    borderRadius: 5,
+  },
+  bookButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
 });
 
 export default SeatSelectionScreen;

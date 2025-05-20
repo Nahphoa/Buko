@@ -1,211 +1,189 @@
+import React, { useState, useEffect } from 'react';
 import {
-  StyleSheet,
-  Text,
   View,
+  Text,
   TextInput,
   TouchableOpacity,
-  Alert,
   ScrollView,
+  StyleSheet,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
-import React, { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation, useRoute } from '@react-navigation/native';
 
-const BookingDetailsScreen = ({ navigation, route }) => {
-  const { busData = {}, selectedSeats = [], user } = route.params || {};
-  const totalFare = (busData.fare || 0) * selectedSeats.length;
+const BookingDetailsScreen = () => {
+  const navigation = useNavigation();
+  const route = useRoute();
+  const { busData, selectedSeats, user } = route.params;
 
-  const [passengers, setPassengers] = useState([]);
-  const [currentPassenger, setCurrentPassenger] = useState({
-    name: user?.name || '',
-    phone: user?.phone || '',
-    age: '',
-    gender: 'male',
-    seat: selectedSeats[0] || '',
-  });
+  // Initialize passenger details for each selected seat
+  const [passengers, setPassengers] = useState(
+    selectedSeats.map(seat => ({
+      name: user?.name || '',
+      phone: user?.phone || '',
+      age: '',
+      gender: 'male',
+      seat,
+    }))
+  );
+
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const totalFare = busData.fare * selectedSeats.length;
 
-  useEffect(() => {
-    navigation.setOptions({
-      title: 'Booking Details',
-      headerLeft: () => (
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginLeft: 15 }}>
-          <Ionicons name="arrow-back" size={24} color="#003580" />
-        </TouchableOpacity>
-      ),
-    });
-  }, [navigation]);
+  const handleInputChange = (index, field, value) => {
+    const updatedPassengers = [...passengers];
+    updatedPassengers[index] = {
+      ...updatedPassengers[index],
+      [field]: value
+    };
+    setPassengers(updatedPassengers);
 
-  useEffect(() => {
-    if (user && selectedSeats.length > 0 && passengers.length === 0) {
-      setCurrentPassenger((prev) => ({
-        ...prev,
-        seat: selectedSeats[0],
-      }));
+    // Clear error if field is corrected
+    if (errors[`${index}_${field}`]) {
+      const newErrors = {...errors};
+      delete newErrors[`${index}_${field}`];
+      setErrors(newErrors);
     }
-  }, [user, selectedSeats]);
-
-  useEffect(() => {
-    if (selectedSeats.length > passengers.length) {
-      setCurrentPassenger((prev) => ({
-        ...prev,
-        seat: selectedSeats[passengers.length] || '',
-      }));
-    }
-  }, [passengers, selectedSeats]);
-
-  const handleInputChange = (field, value) => {
-    setCurrentPassenger((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: null }));
   };
 
-  const validatePassenger = () => {
+  const validateForm = () => {
     const newErrors = {};
-    if (!currentPassenger.name.trim()) newErrors.name = 'Name is required';
-    if (!currentPassenger.phone.trim() || !/^\d{10,15}$/.test(currentPassenger.phone)) {
-      newErrors.phone = 'Enter a valid phone number (10-15 digits)';
-    }
-    if (
-      !currentPassenger.age ||
-      isNaN(currentPassenger.age) ||
-      currentPassenger.age < 1 ||
-      currentPassenger.age > 120
-    ) {
-      newErrors.age = 'Enter a valid age (1-120)';
-    }
-    if (!currentPassenger.seat) newErrors.seat = 'No seat assigned';
+    let isValid = true;
+
+    passengers.forEach((passenger, index) => {
+      if (!passenger.name.trim()) {
+        newErrors[`${index}_name`] = 'Name is required';
+        isValid = false;
+      }
+      if (!passenger.phone.trim() || !/^\d{10,15}$/.test(passenger.phone)) {
+        newErrors[`${index}_phone`] = 'Valid phone required (10-15 digits)';
+        isValid = false;
+      }
+      if (!passenger.age || isNaN(passenger.age) || passenger.age < 1 || passenger.age > 120) {
+        newErrors[`${index}_age`] = 'Valid age required (1-120)';
+        isValid = false;
+      }
+    });
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return isValid;
   };
 
-  const addPassenger = () => {
-    if (validatePassenger()) {
-      setPassengers((prev) => [...prev, currentPassenger]);
-      setCurrentPassenger({
-        name: '',
-        phone: '',
-        age: '',
-        gender: 'male',
-        seat: selectedSeats[passengers.length + 1] || '',
-      });
-    }
-  };
-
-  const confirmAndPay = () => {
-    if (passengers.length === 0) {
-      Alert.alert('Error', 'Please add at least one passenger');
+  const handleConfirmBooking = () => {
+    if (!validateForm()) {
+      Alert.alert('Validation Error', 'Please correct all passenger details');
       return;
     }
 
-    if (passengers.length !== selectedSeats.length) {
-      Alert.alert('Error', 'Please assign all selected seats to passengers');
-      return;
-    }
-
+    setLoading(true);
+    
     const bookingDetails = {
-      bus: busData,
+      busData,
       passengers,
       selectedSeats,
       totalFare,
       user,
     };
 
-    navigation.navigate('PaymentScreen', { bookingDetails });
+    // Navigate to payment screen after short delay
+    setTimeout(() => {
+      setLoading(false);
+      navigation.navigate('PaymentScreen', bookingDetails);
+    }, 500);
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-      {/* Removed Duplicate Header Text */}
+    <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Fill your Details</Text>
+      </View>
+
+      <View style={styles.summaryCard}>
+        <Text style={styles.summaryTitle}>Trip Summary</Text>
+        <Text>Bus: {busData.busName}</Text>
+        <Text>Route: {busData.from} → {busData.to}</Text>
+        <Text>Date: {busData.date}</Text>
+        <Text>Time: {busData.departureTime}</Text>
+        <Text>Seats: {selectedSeats.join(', ')}</Text>
+        <Text style={styles.total}>Total: ₹{totalFare}</Text>
+      </View>
 
       {passengers.map((passenger, index) => (
         <View key={index} style={styles.passengerCard}>
-          <View style={styles.passengerHeader}>
-            <Text style={styles.cardTitle}>Passenger {index + 1}</Text>
+          <Text style={styles.passengerTitle}>Passenger {index + 1} (Seat: {passenger.seat})</Text>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Full Name*</Text>
+            <TextInput
+              style={[styles.input, errors[`${index}_name`] && styles.errorInput]}
+              value={passenger.name}
+              onChangeText={(text) => handleInputChange(index, 'name', text)}
+              placeholder="Enter full name"
+            />
+            {errors[`${index}_name`] && <Text style={styles.errorText}>{errors[`${index}_name`]}</Text>}
           </View>
-          <Text>Name: {passenger.name}</Text>
-          <Text>Phone: {passenger.phone}</Text>
-          <Text>Age: {passenger.age}</Text>
-          <Text>Gender: {passenger.gender}</Text>
-          <Text>Seat: {passenger.seat}</Text>
-        </View>
-      ))}
 
-      {passengers.length < selectedSeats.length && (
-        <>
-          <Text style={styles.sectionTitle}>Add Passenger {passengers.length + 1}</Text>
-          {[{ field: 'name', label: 'Full Name*', placeholder: 'John Doe' },
-            { field: 'phone', label: 'Phone*', placeholder: '0712345678', keyboardType: 'phone-pad' },
-            { field: 'age', label: 'Age*', placeholder: '00', keyboardType: 'numeric' }
-          ].map(({ field, label, placeholder, keyboardType }) => (
-            <View key={field} style={styles.formGroup}>
-              <Text style={styles.label}>{label}</Text>
-              <TextInput
-                style={[styles.input, errors[field] && styles.errorInput]}
-                value={currentPassenger[field]}
-                onChangeText={(text) => handleInputChange(field, text)}
-                placeholder={placeholder}
-                keyboardType={keyboardType}
-              />
-              {errors[field] && <Text style={styles.errorText}>{errors[field]}</Text>}
-            </View>
-          ))}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Phone*</Text>
+            <TextInput
+              style={[styles.input, errors[`${index}_phone`] && styles.errorInput]}
+              value={passenger.phone}
+              onChangeText={(text) => handleInputChange(index, 'phone', text)}
+              placeholder="Enter phone number"
+              keyboardType="phone-pad"
+            />
+            {errors[`${index}_phone`] && <Text style={styles.errorText}>{errors[`${index}_phone`]}</Text>}
+          </View>
 
-          {/* Gender */}
-          <View style={styles.formGroup}>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Age*</Text>
+            <TextInput
+              style={[styles.input, errors[`${index}_age`] && styles.errorInput]}
+              value={passenger.age}
+              onChangeText={(text) => handleInputChange(index, 'age', text)}
+              placeholder="Enter age"
+              keyboardType="numeric"
+            />
+            {errors[`${index}_age`] && <Text style={styles.errorText}>{errors[`${index}_age`]}</Text>}
+          </View>
+
+          <View style={styles.inputGroup}>
             <Text style={styles.label}>Gender*</Text>
             <View style={styles.genderOptions}>
-              {['male', 'female', 'other'].map((gender) => (
+              {['male', 'female', 'other'].map(gender => (
                 <TouchableOpacity
                   key={gender}
                   style={[
                     styles.genderButton,
-                    currentPassenger.gender === gender && styles.genderSelected,
+                    passenger.gender === gender && styles.genderSelected
                   ]}
-                  onPress={() => handleInputChange('gender', gender)}
+                  onPress={() => handleInputChange(index, 'gender', gender)}
                 >
-                  <Text style={currentPassenger.gender === gender && styles.genderTextSelected}>
+                  <Text style={[
+                    styles.genderText,
+                    passenger.gender === gender && styles.genderTextSelected
+                  ]}>
                     {gender.charAt(0).toUpperCase() + gender.slice(1)}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
           </View>
-
-          {/* Seat Display */}
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>Seat*</Text>
-            <TextInput style={styles.input} value={currentPassenger.seat} editable={false} />
-          </View>
-
-          <TouchableOpacity style={styles.addButton} onPress={addPassenger}>
-            <Text style={styles.addButtonText}>+ Add Passenger</Text>
-          </TouchableOpacity>
-        </>
-      )}
-
-      <View style={styles.summaryCard}>
-        <Text style={styles.summaryTitle}>Trip Summary</Text>
-        <Text>Bus: {busData.busName || 'BUKO Travel'}</Text>
-        <Text>Route: {busData.departureStation || 'N/A'} → {busData.arrivalStation || 'N/A'}</Text>
-        <Text>Departure Station: {busData.departureStationName || 'BUKO Dimapur Station'}</Text>
-        <Text>Arrival Station: {busData.arrivalStationName || 'BUKO Mon Station'}</Text>
-        <Text>Date: {busData.departureDate || 'N/A'}</Text>
-        <Text>Time: {busData.departureTime || '4:30 PM'}</Text>
-        <Text>Seats: {selectedSeats.join(', ') || 'N/A'}</Text>
-        <Text style={styles.total}>Total: KES {totalFare.toLocaleString()}</Text>
-      </View>
+        </View>
+      ))}
 
       <TouchableOpacity
-        style={[
-          styles.confirmButton,
-          passengers.length !== selectedSeats.length && styles.disabledButton,
-        ]}
-        onPress={confirmAndPay}
-        disabled={passengers.length !== selectedSeats.length}
+        style={[styles.confirmButton, loading && styles.disabledButton]}
+        onPress={handleConfirmBooking}
+        disabled={loading}
       >
-        <Text style={styles.confirmText}>
-          {passengers.length === selectedSeats.length ? 'Confirm & Pay' : 'Assign All Seats First'}
-        </Text>
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.confirmText}>Proceed to Payment</Text>
+        )}
       </TouchableOpacity>
     </ScrollView>
   );
@@ -214,130 +192,114 @@ const BookingDetailsScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    padding: 20,
-    paddingBottom: 40,
+    padding: 16,
+    backgroundColor: '#f5f5f5',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginLeft: 15,
+    color: '#003580',
+  },
+  summaryCard: {
     backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 20,
+    elevation: 2,
+  },
+  summaryTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#003580',
+  },
+  total: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 10,
+    color: '#4CAF50',
   },
   passengerCard: {
-    backgroundColor: '#f8f9fa',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 15,
-    borderWidth: 1,
-    borderColor: '#e9ecef',
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 16,
+    elevation: 2,
   },
-  passengerHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  cardTitle: {
-    fontWeight: 'bold',
+  passengerTitle: {
     fontSize: 16,
-    color: '#212529',
-  },
-  sectionTitle: {
     fontWeight: 'bold',
-    fontSize: 18,
-    marginTop: 10,
-    marginBottom: 15,
-    color: '#212529',
+    marginBottom: 12,
+    color: '#333',
   },
-  formGroup: {
-    marginBottom: 15,
+  inputGroup: {
+    marginBottom: 12,
   },
   label: {
     fontSize: 14,
     marginBottom: 6,
-    fontWeight: '500',
-    color: '#495057',
+    color: '#555',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ced4da',
-    borderRadius: 8,
+    borderColor: '#ddd',
+    borderRadius: 6,
     padding: 12,
     fontSize: 16,
     backgroundColor: '#fff',
   },
   errorInput: {
-    borderColor: '#dc3545',
-    backgroundColor: '#fff8f9',
+    borderColor: '#f44336',
   },
   errorText: {
-    color: '#dc3545',
+    color: '#f44336',
     fontSize: 12,
     marginTop: 4,
   },
   genderOptions: {
     flexDirection: 'row',
-    gap: 10,
-    marginTop: 5,
+    justifyContent: 'space-between',
+    marginTop: 6,
   },
   genderButton: {
     flex: 1,
     padding: 10,
-    borderRadius: 8,
+    borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#ced4da',
+    borderColor: '#ddd',
     alignItems: 'center',
-    backgroundColor: '#f8f9fa',
+    marginHorizontal: 4,
   },
   genderSelected: {
     backgroundColor: '#003580',
     borderColor: '#003580',
   },
+  genderText: {
+    color: '#333',
+  },
   genderTextSelected: {
     color: '#fff',
-  },
-  addButton: {
-    backgroundColor: '#28a745',
-    padding: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 10,
-    marginBottom: 20,
-  },
-  addButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  summaryCard: {
-    backgroundColor: '#f8f9fa',
-    padding: 20,
-    borderRadius: 10,
-    marginTop: 20,
-    borderWidth: 1,
-    borderColor: '#e9ecef',
-  },
-  summaryTitle: {
-    fontWeight: 'bold',
-    fontSize: 18,
-    marginBottom: 12,
-    color: '#212529',
-  },
-  total: {
-    fontWeight: 'bold',
-    fontSize: 18,
-    marginTop: 10,
-    color: '#28a745',
   },
   confirmButton: {
     backgroundColor: '#003580',
     padding: 16,
-    borderRadius: 10,
+    borderRadius: 8,
     alignItems: 'center',
-    marginTop: 25,
-  },
-  disabledButton: {
-    backgroundColor: '#6c757d',
-    opacity: 0.7,
+    marginTop: 20,
   },
   confirmText: {
     color: '#fff',
-    fontWeight: 'bold',
     fontSize: 18,
+    fontWeight: 'bold',
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
 });
 

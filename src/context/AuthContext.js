@@ -1,18 +1,21 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
+// src/context/AuthProvider.js
 
-// Create a new context
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import app from '../firebaseConfig'; // ✅ Ensure Firebase is initialized
+
+// Create Auth context
 const AuthContext = createContext();
 
-// Provider to wrap around app
+// AuthProvider component
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const auth = getAuth();
+    const auth = getAuth(app); // ✅ Pass initialized app
     const unsubscribe = onAuthStateChanged(
       auth,
       (user) => {
@@ -39,14 +42,18 @@ export const AuthProvider = ({ children }) => {
     );
   }
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
-// useAuth hook
+// Custom hook
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 };

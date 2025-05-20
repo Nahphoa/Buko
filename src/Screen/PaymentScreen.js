@@ -1,336 +1,303 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   Alert,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { collection, addDoc, Timestamp } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
+import { db } from '../firebaseConfig';
+// Adjust the path based on your file structure
 
-const PaymentScreen = ({ route, navigation }) => {
-  const {
-    selectedSeats = [],
-    totalPrice = 0,
-    passengerDetails = {},
-    busDetails = {},
-  } = route.params || {};
-
-  const [paymentMethod, setPaymentMethod] = useState('debitCard');
-  const [cardNumber, setCardNumber] = useState('');
-  const [expiryDate, setExpiryDate] = useState('');
-  const [cvv, setCvv] = useState('');
-  const [upiId, setUpiId] = useState('');
+const PaymentScreen = () => {
+  const navigation = useNavigation();
+  const route = useRoute();
+  const { bookingDetails } = route.params || {};
   const [loading, setLoading] = useState(false);
+  const [selectedMethod, setSelectedMethod] = useState(null);
 
-  useEffect(() => {
-    if (!busDetails?.busId || !passengerDetails?.name) {
-      Alert.alert(
-        'Missing Information',
-        'Required booking information is missing. Please start your booking again.',
-        [{ text: 'OK', onPress: () => navigation.goBack() }]
-      );
-    }
-  }, []);
+  const paymentMethods = [
+    { id: 'upi', name: 'UPI Payment', icon: 'phone-portrait', description: 'Pay via Google Pay, PhonePe, etc.' },
+    { id: 'card', name: 'Credit/Debit Card', icon: 'card' },
+    { id: 'paypal', name: 'PayPal', icon: 'logo-paypal' },
+    { id: 'wallet', name: 'BUKO Wallet', icon: 'wallet' },
+  ];
 
-  const handlePaymentConfirmation = async () => {
-    let isValid = true;
-    let errorMessage = '';
-
-    if (paymentMethod === 'debitCard') {
-      if (!cardNumber || cardNumber.length !== 16) {
-        isValid = false;
-        errorMessage = 'Enter a valid 16-digit card number';
-      } else if (
-        !expiryDate ||
-        !expiryDate.match(/^(0[1-9]|1[0-2])\/?([0-9]{2})$/)
-      ) {
-        isValid = false;
-        errorMessage = 'Enter a valid expiry date (MM/YY)';
-      } else if (!cvv || cvv.length !== 3) {
-        isValid = false;
-        errorMessage = 'Enter a valid 3-digit CVV';
-      }
-    } else if (paymentMethod === 'upi') {
-      if (!upiId || !upiId.match(/^[a-zA-Z0-9._-]+@[a-zA-Z0-9]+$/)) {
-        isValid = false;
-        errorMessage = 'Enter a valid UPI ID (e.g., name@upi)';
-      }
-    } else {
-      isValid = false;
-      errorMessage = 'Select a valid payment method';
-    }
-
-    if (!isValid) {
-      Alert.alert('Invalid Details', errorMessage);
+  const handlePayment = async () => {
+    if (!selectedMethod) {
+      Alert.alert('Error', 'Please select a payment method');
       return;
     }
 
     setLoading(true);
 
-    setTimeout(async () => {
-      setLoading(false);
+    try {
+      // Simulate payment processing
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
-      const newBooking = {
-        busName: busDetails.busName,
-        from: busDetails.from,
-        to: busDetails.to,
-        date: busDetails.date,
-        time: busDetails.time || 'N/A',
-        busId: busDetails.busId,
-        selectedSeats,
-        totalPrice,
-        passengerDetails,
-      };
+      // 🔥 Save booking to Firestore
+      const auth = getAuth();
+      const user = auth.currentUser;
 
-      try {
-        const existing = await AsyncStorage.getItem('bookingHistory');
-        const parsed = existing ? JSON.parse(existing) : [];
-        parsed.push(newBooking);
-        await AsyncStorage.setItem('bookingHistory', JSON.stringify(parsed));
-      } catch (error) {
-        console.error('Failed to save booking:', error);
-      }
+      if (!user) throw new Error('User not authenticated');
 
+      await addDoc(collection(db, 'bookings'), {
+        userId: user.uid,
+        userEmail: user.email,
+        busName: bookingDetails?.bus?.busName,
+        from: bookingDetails?.bus?.departureStation,
+        to: bookingDetails?.bus?.arrivalStation,
+        date: bookingDetails?.bus?.departureDate,
+        time: bookingDetails?.bus?.departureTime,
+        seats: bookingDetails?.selectedSeats,
+        passengers: bookingDetails?.passengers,
+        totalFare: bookingDetails?.totalFare,
+        paymentMethod: selectedMethod,
+        bookedAt: Timestamp.now(),
+      });
+
+      // ✅ Show success alert and navigate
       Alert.alert(
-        'Booking Confirmed',
-        `Your booking from ${busDetails.from} to ${busDetails.to} on ${busDetails.date} is confirmed!\nSeats: ${selectedSeats.join(', ')}\nAmount: ₹${totalPrice}`,
-        [{ text: 'OK', onPress: () => navigation.navigate('Booking') }]
+        'Payment Successful',
+        `Paid via ${paymentMethods.find(m => m.id === selectedMethod)?.name}`,
+        [
+          {
+            text: 'OK',
+            onPress: () =>
+              navigation.navigate('BookingConfirmation', { bookingDetails }),
+          },
+        ]
       );
-    }, 1500);
+    } catch (error) {
+      Alert.alert('Payment Failed', error.message || 'Please try another payment method');
+    } finally {
+      setLoading(false);
+    }
   };
-
-  if (loading) {
-    return (
-      <View style={[styles.container, styles.loadingContainer]}>
-        <ActivityIndicator size="large" color="#003580" />
-        <Text style={styles.loadingText}>Processing Payment...</Text>
-      </View>
-    );
-  }
-
-  if (!busDetails?.busId || !passengerDetails?.name) {
-    return (
-      <View style={[styles.container, styles.errorContainer]}>
-        <Text style={styles.errorText}>Booking information is incomplete</Text>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.backButtonText}>Go Back</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
 
   return (
     <View style={styles.container}>
-      <View style={styles.summaryContainer}>
-        <Text style={styles.sectionTitle}>Booking Summary</Text>
+      {/* Header with Back Button */}
+      
 
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Bus:</Text>
-          <Text style={styles.detailValue}>{busDetails.busName || 'N/A'}</Text>
-        </View>
+      <ScrollView contentContainerStyle={styles.content}>
+        <Ionicons name="wallet-outline" size={60} color="#003580" style={styles.icon} />
+        <Text style={styles.title}>Complete Payment</Text>
 
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Route:</Text>
-          <Text style={styles.detailValue}>
-            {busDetails.from} → {busDetails.to}
-          </Text>
-        </View>
-
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Date:</Text>
-          <Text style={styles.detailValue}>{busDetails.date}</Text>
-        </View>
-
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Passenger:</Text>
-          <Text style={styles.detailValue}>
-            {passengerDetails.name}, {passengerDetails.age},{' '}
-            {passengerDetails.gender}
-          </Text>
-        </View>
-
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Seats:</Text>
-          <Text style={styles.detailValue}>{selectedSeats.join(', ')}</Text>
-        </View>
-
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Total:</Text>
-          <Text style={[styles.detailValue, styles.totalPrice]}>
-            ₹{totalPrice}
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.paymentContainer}>
-        <Text style={styles.sectionTitle}>Select Payment Method</Text>
-
-        <View style={styles.paymentMethods}>
-          <TouchableOpacity
-            style={[
-              styles.paymentButton,
-              paymentMethod === 'debitCard' && styles.selectedPayment,
-            ]}
-            onPress={() => setPaymentMethod('debitCard')}
-          >
-            <Text
-              style={[
-                styles.paymentText,
-                paymentMethod === 'debitCard' && styles.selectedPaymentText,
-              ]}
-            >
-              Debit Card
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.paymentButton,
-              paymentMethod === 'upi' && styles.selectedPayment,
-            ]}
-            onPress={() => setPaymentMethod('upi')}
-          >
-            <Text
-              style={[
-                styles.paymentText,
-                paymentMethod === 'upi' && styles.selectedPaymentText,
-              ]}
-            >
-              UPI
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {paymentMethod === 'debitCard' && (
-          <View style={styles.inputGroup}>
-            <TextInput
-              placeholder="Card Number"
-              style={styles.input}
-              keyboardType="numeric"
-              value={cardNumber}
-              onChangeText={setCardNumber}
-              maxLength={16}
-            />
-            <TextInput
-              placeholder="Expiry Date (MM/YY)"
-              style={styles.input}
-              value={expiryDate}
-              onChangeText={setExpiryDate}
-            />
-            <TextInput
-              placeholder="CVV"
-              style={styles.input}
-              keyboardType="numeric"
-              value={cvv}
-              onChangeText={setCvv}
-              secureTextEntry
-              maxLength={3}
-            />
+        <View style={styles.tripDetails}>
+          <Text style={styles.busName}>{bookingDetails?.bus?.busName || 'BUKO Travel'}</Text>
+          <View style={styles.route}>
+            <Text style={styles.station}>{bookingDetails?.bus?.departureStation}</Text>
+            <Ionicons name="arrow-forward" size={16} color="#666" />
+            <Text style={styles.station}>{bookingDetails?.bus?.arrivalStation}</Text>
           </View>
-        )}
+          <Text style={styles.datetime}>
+            {bookingDetails?.bus?.departureDate} • {bookingDetails?.bus?.departureTime}
+          </Text>
+          <Text style={styles.passengers}>
+            {bookingDetails?.selectedSeats?.join(', ')} • {bookingDetails?.passengers?.length} passengers
+          </Text>
+        </View>
 
-        {paymentMethod === 'upi' && (
-          <View style={styles.inputGroup}>
-            <TextInput
-              placeholder="Enter your UPI ID"
-              style={styles.input}
-              value={upiId}
-              onChangeText={setUpiId}
-              autoCapitalize="none"
-              keyboardType="email-address"
-            />
-          </View>
-        )}
-      </View>
+        {/* Payment Methods */}
+        <Text style={styles.sectionTitle}>Choose Payment Method</Text>
+        {paymentMethods.map((method) => (
+          <TouchableOpacity
+            key={method.id}
+            style={[styles.methodCard, selectedMethod === method.id && styles.selectedCard]}
+            onPress={() => setSelectedMethod(method.id)}
+          >
+            <View style={styles.methodInfo}>
+              <Ionicons
+                name={method.icon}
+                size={24}
+                color={selectedMethod === method.id ? '#003580' : '#666'}
+              />
+              <View style={styles.methodTexts}>
+                <Text style={styles.methodName}>{method.name}</Text>
+                {method.description && (
+                  <Text style={styles.methodDesc}>{method.description}</Text>
+                )}
+              </View>
+            </View>
+            {selectedMethod === method.id && (
+              <Ionicons name="checkmark-circle" size={20} color="#003580" />
+            )}
+          </TouchableOpacity>
+        ))}
 
+        <View style={styles.totalContainer}>
+          <Text style={styles.totalText}>Total Amount</Text>
+          <Text style={styles.amount}>₹{bookingDetails?.totalFare?.toLocaleString() || '0'}</Text>
+        </View>
+      </ScrollView>
+
+      {/* Payment Button */}
       <TouchableOpacity
-        style={styles.confirmButton}
-        onPress={handlePaymentConfirmation}
+        style={[styles.payButton, (!selectedMethod || loading) && styles.disabledButton]}
+        onPress={handlePayment}
+        disabled={!selectedMethod || loading}
       >
-        <Text style={styles.confirmButtonText}>Pay ₹{totalPrice}</Text>
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>
+            {selectedMethod
+              ? `Pay via ${paymentMethods.find(m => m.id === selectedMethod)?.name}`
+              : 'Select Payment Method'}
+          </Text>
+        )}
       </TouchableOpacity>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f0f2f5', padding: 15 },
-  loadingContainer: { justifyContent: 'center', alignItems: 'center', flex: 1 },
-  loadingText: { marginTop: 20, fontSize: 16, color: '#003580' },
-  errorContainer: { justifyContent: 'center', alignItems: 'center', flex: 1 },
-  errorText: { fontSize: 18, color: 'red', marginBottom: 20 },
-  backButton: {
-    backgroundColor: '#003580',
-    padding: 12,
-    borderRadius: 8,
-    width: '60%',
-    alignItems: 'center',
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
   },
-  backButtonText: { color: 'white', fontWeight: 'bold' },
-  summaryContainer: {
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 10,
-    marginBottom: 20,
-    elevation: 2,
-  },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10 },
-  detailRow: {
+  header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 6,
-  },
-  detailLabel: { fontWeight: '600' },
-  detailValue: { fontWeight: '400', color: '#333' },
-  totalPrice: { color: '#d32f2f', fontWeight: 'bold' },
-  paymentContainer: {
-    backgroundColor: '#fff',
+    alignItems: 'center',
     padding: 16,
-    borderRadius: 10,
-    marginBottom: 20,
+    backgroundColor: '#fff',
     elevation: 2,
   },
-  paymentMethods: { flexDirection: 'row', marginBottom: 10 },
-  paymentButton: {
-    flex: 1,
-    padding: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    marginHorizontal: 5,
-    alignItems: 'center',
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#003580',
   },
-  selectedPayment: {
-    backgroundColor: '#003580',
+  content: {
+    padding: 16,
+    paddingBottom: 100,
+  },
+  icon: {
+    alignSelf: 'center',
+    marginVertical: 10,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#003580',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  tripDetails: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 16,
+    marginBottom: 20,
+    elevation: 1,
+  },
+  busName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+  },
+  route: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  station: {
+    fontSize: 15,
+    color: '#333',
+  },
+  datetime: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 6,
+  },
+  passengers: {
+    fontSize: 14,
+    color: '#28a745',
+    fontWeight: '500',
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#666',
+    marginBottom: 12,
+    marginTop: 8,
+  },
+  methodCard: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    elevation: 1,
+  },
+  selectedCard: {
+    borderWidth: 1.5,
     borderColor: '#003580',
   },
-  paymentText: { color: '#333' },
-  selectedPaymentText: { color: 'white', fontWeight: 'bold' },
-  inputGroup: { marginTop: 10 },
-  input: {
-    backgroundColor: '#f8f8f8',
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#ccc',
-  },
-  confirmButton: {
-    backgroundColor: '#003580',
-    padding: 16,
-    borderRadius: 10,
+  methodInfo: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
-  confirmButtonText: {
-    color: 'white',
+  methodTexts: {
+    marginLeft: 12,
+  },
+  methodName: {
     fontSize: 16,
+    color: '#333',
+    fontWeight: '500',
+  },
+  methodDesc: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 2,
+  },
+  totalContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 20,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+  },
+  totalText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+  },
+  amount: {
+    fontSize: 22,
     fontWeight: 'bold',
+    color: '#28a745',
+  },
+  payButton: {
+    backgroundColor: '#003580',
+    padding: 16,
+    borderRadius: 8,
+    margin: 16,
+    alignItems: 'center',
+    position: 'absolute',
+    bottom: 0,
+    left: 16,
+    right: 16,
+  },
+  disabledButton: {
+    backgroundColor: '#aaa',
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });
 

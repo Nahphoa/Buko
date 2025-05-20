@@ -2,14 +2,14 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { View, ActivityIndicator, Text } from 'react-native';
+import { View, ActivityIndicator } from 'react-native';
 import Entypo from '@expo/vector-icons/Entypo';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 // Screens
 import HomeScreen from './src/Screen/HomeScreen';
-import BookingScreen from './src/Screen/BookingScreen';
+import BookingHistoryScreen from './src/Screen/BookingHistoryScreen';
 import ProfileScreen from './src/Screen/ProfileScreen';
 import LoginScreen from './src/Screen/LoginScreen';
 import SignUpScreen from './src/Screen/SignUpScreen';
@@ -20,6 +20,7 @@ import SearchBusScreen from './src/Screen/SearchBusScreen';
 import SeatSelectionScreen from './src/Screen/SeatSelectionScreen';
 import BookingDetailsScreen from './src/Screen/BookingDetailsScreen';
 import PaymentScreen from './src/Screen/PaymentScreen';
+import BookingConfirmationScreen from './src/Screen/BookingConfirmationScreen'; // Check this path!
 
 // Context
 import { useAuth } from './src/context/AuthContext';
@@ -49,8 +50,8 @@ function BottomTabs() {
         }}
       />
       <Tab.Screen
-        name="Booking"
-        component={BookingScreen}
+        name="BookingHistory"
+        component={BookingHistoryScreen}
         options={{
           tabBarIcon: ({ focused }) =>
             focused ? (
@@ -91,34 +92,23 @@ export default function StackNavigator() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
         {user ? (
-          // Authenticated screens
           <>
-            <Stack.Screen
-              name="Main"  // Changed back to "Main" to match your navigation calls
-              component={BottomTabs}
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="SelectRouteScreen"
-              component={SelectRouteScreen}
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="SearchBusScreen"
-              component={SearchBusScreen}
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="BusListScreen"
-              component={BusListScreen}
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="SeatSelectionScreen"
-              component={SeatSelectionScreen}
-              options={{ headerShown: false }}
+            <Stack.Screen name="Main" component={BottomTabs} />
+            <Stack.Screen name="SelectRouteScreen" component={SelectRouteScreen} />
+            <Stack.Screen name="SearchBusScreen" component={SearchBusScreen} />
+            <Stack.Screen name="BusListScreen" component={BusListScreen} />
+            <Stack.Screen name="SeatSelectionScreen" component={SeatSelectionScreen} />
+            <Stack.Screen 
+              name="BookingConfirmationScreen" 
+              component={BookingConfirmationScreen}
+              options={{
+                headerShown: true,
+                title: 'Confirm Booking',
+                headerTitleAlign: 'center',
+                headerTintColor: '#003580',
+              }}
             />
             <Stack.Screen
               name="BookingDetailsScreen"
@@ -130,30 +120,22 @@ export default function StackNavigator() {
                 headerTintColor: '#003580',
               }}
             />
-            <Stack.Screen
-              name="PaymentScreen"
+            <Stack.Screen 
+              name="PaymentScreen" 
               component={PaymentScreen}
-              options={{ headerShown: false }}
+              options={{
+                headerShown: true,
+                title: 'Make Payment',
+                headerTitleAlign: 'center',
+                headerTintColor: '#003580',
+              }}
             />
           </>
         ) : (
-          // Unauthenticated screens
           <>
-            <Stack.Screen
-              name="Login"
-              component={LoginScreen}
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="SignUp"
-              component={SignUpScreen}
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="ForgotPassword"
-              component={ForgotPasswordScreen}
-              options={{ headerShown: false }}
-            />
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="SignUp" component={SignUpScreen} />
+            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
           </>
         )}
       </Stack.Navigator>

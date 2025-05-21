@@ -9,11 +9,21 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { auth } from "../firebaseConfig";
+import { db } from "../firebaseConfig";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+
+
 
 const Bookyseat = ({ route }) => {
   const navigation = useNavigation();
   const { busName, price = 0, totalSeats, busId } = route.params || {};
-  const parsedTotalSeats = Number(totalSeats) || 40;
+
+const parsedTotalSeats = parseInt(totalSeats, 10);
+  const finalTotalSeats = Number.isFinite(parsedTotalSeats) && parsedTotalSeats > 0 ? parsedTotalSeats : 40;
+console.log("Received totalSeats:", totalSeats);
+console.log("Parsed totalSeats:", finalTotalSeats);
+
+
 
   const reservedSeats = []; // Add any reserved seat numbers here
   const [selectedSeats, setSelectedSeats] = useState([]);
@@ -59,7 +69,8 @@ const Bookyseat = ({ route }) => {
 
   const seatRows = [];
   let seatNum = 1;
-  while (seatNum <= parsedTotalSeats) {
+  while (seatNum <= finalTotalSeats)
+ {
     const row = [];
     if (seatNum <= parsedTotalSeats) row.push(seatNum++);
     if (seatNum <= parsedTotalSeats) row.push(seatNum++);

@@ -60,7 +60,7 @@ const BusListScreen = ({ route }) => {
                     busId: item.id,
                     busName: item.busname,
                     price: item.price,
-                    totalSeats: Number(item.totalseat),
+                    totalSeats: Number(item.totalSeats),
                   })
                 }
               >

@@ -18,7 +18,7 @@ import Bookyseat from './src/screen/Bookyseat';
 import BookingMenu from './src/screen/BookingMenu';
 import ForgotPasswordScreen from './src/screen/ForgotPasswordScreen';
 import TicketFormScreen from './src/screen/TicketFormScreen';
-import PaymentScreen from './src/screen/PaymentScreen';
+
 
 const StackNavigator = () => {
   const MyTabs = createBottomTabNavigator();
@@ -64,24 +64,37 @@ const StackNavigator = () => {
   }
   return (
     <NavigationContainer>
-    <Stack.Navigator>
+    <Stack.Navigator
+      screenOptions={{
+    headerStyle: {
+      backgroundColor: '#003580', // ✅ Blue header background
+    },
+    headerTintColor: '#fff', // ✅ White icons/text
+    headerTitleStyle: {
+      fontWeight: 'bold',
+    },
+    headerShadowVisible: false, // optional
+  }}
+>
+    
       <Stack.Screen name="Main" component={BottomTabs} option={{headerShown:false}}/>
       <Stack.Screen name="Home" component={HomeScreen} />
       <Stack.Screen name="SelectRoute" component={SelectRouteScreen} />
       
       <Stack.Screen name ="SignUp" component={SignUpScreen} />
-      <Stack.Screen name ="Login" component={LoginScreen}options={{headerShown:true}} />
+      <Stack.Screen name ="Login" component={LoginScreen}/>
       <Stack.Screen name ="ForgotPassword" component={ForgotPasswordScreen} />
 
       <Stack.Screen name ="BusList" component={BusListScreen}/>
       <Stack.Screen name ="Bookyseat" component={Bookyseat}/>
       <Stack.Screen name ="Booking" component={BookingScreen} option ={{headerShown:false}} />
       <Stack.Screen name="TicketForm" component={TicketFormScreen}/>
-      <Stack.Screen name="Payment" component={PaymentScreen}/>
+      
        
 
     </Stack.Navigator>
     </NavigationContainer>
+
   )
 }
 

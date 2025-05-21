@@ -20,6 +20,7 @@ const CalendarComponent = ({ onSelectDate }) => {
           style={styles.input}
           placeholder="Date of Travel (DD/MM/YYYY)"
           value={selectedDate}
+          
           editable={false} // Read-only, user taps to open calendar
         />
       </TouchableOpacity>
@@ -59,7 +60,7 @@ const styles = StyleSheet.create({
   input: {
     height: 49,
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: "#000000",
     borderRadius: 7,
     paddingHorizontal: 55,
     width: 385,
@@ -91,6 +92,7 @@ const styles = StyleSheet.create({
   closeButtonText: {
     color: "white",
     fontSize: 16,
+    
   },
 });
 

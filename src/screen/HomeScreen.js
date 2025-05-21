@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Image, StyleSheet, Text, TouchableOpacity,Alert, View } from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity, Alert, View, StatusBar, SafeAreaView } from 'react-native';
 import CalendarComponent from '../components/CalendarComponent';
 
 const HomeScreen = ({ navigation, route }) => {
@@ -13,9 +13,9 @@ const HomeScreen = ({ navigation, route }) => {
   }, [route.params]);
 
   const handleSearch = () => {
-    if (!selectedDate){
+    if (!selectedDate) {
       Alert.alert("Missing Date", "Please select a date of travel");
-    return;
+      return;
     }
     console.log('Searching for buses...');
     console.log('From:', from);
@@ -23,14 +23,13 @@ const HomeScreen = ({ navigation, route }) => {
     console.log('Date:', selectedDate);
 
     navigation.navigate("BusList", { from, to, selectedDate });
-
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      <StatusBar backgroundColor="#003580" barStyle="dark-content" />
+
       <Image source={require("../assets/logo.png")} style={styles.logo} />
-     
-    
 
       {/* FROM FIELD */}
       <TouchableOpacity 
@@ -49,7 +48,7 @@ const HomeScreen = ({ navigation, route }) => {
       </TouchableOpacity>
 
       {/* DATE FIELD */}
-      <View style={styles.container}>
+      <View style={{ width: '100%', marginVertical: 20 }}>
         <CalendarComponent onSelectDate={setSelectedDate} />
       </View>
 
@@ -57,7 +56,7 @@ const HomeScreen = ({ navigation, route }) => {
       <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
         <Text style={styles.buttonText}>Search Bus</Text>
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -66,27 +65,27 @@ export default HomeScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#40E0D0',
+    backgroundColor: '#fff',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     padding: 13,
   },
   logo: {
     height: 130,
     width: 100,
-    marginBottom: 70,
-    marginTop: 80,
+    marginBottom: 40,
+    marginTop: 40,
   },
   input: {
     height: 50,
     width: '100%',
-    borderColor: '#ccc',
+    borderColor: '#000000',
     borderWidth: 1,
     borderRadius: 5,
     paddingHorizontal: 20,
     justifyContent: "center",
     backgroundColor: '#fff',
-    marginBottom: 0,
+    marginBottom: 15,
   },
   searchButton: {
     height: 50,
@@ -95,7 +94,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 190,
+    marginTop: 30,
   },
   buttonText: {
     color: '#fff',

@@ -1,38 +1,76 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, Button, StyleSheet, Alert } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  Button,
+  StyleSheet,
+  Alert,
+} from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import { db } from "../firebaseConfig"; // adjust if needed
+import { collection, addDoc } from "firebase/firestore";
 
 const TicketFormScreen = () => {
+  const navigation = useNavigation();
+  const route = useRoute();
+  const { bookingData } = route.params;
+
+  const { selectedSeats = [] } = bookingData;
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [passengers, setPassengers] = useState([]);
+
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [age, setAge] = useState("");
   const [gender, setGender] = useState("Male");
 
-  const navigation = useNavigation();
-  const route = useRoute();
-  const { bookingData } = route.params;
-
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!name || !phone || !age) {
       Alert.alert("Missing Info", "Please fill in all the fields.");
       return;
     }
 
-    const ticketDetails = {
+    const passengerData = {
       ...bookingData,
+      seatNumber: selectedSeats[currentIndex],
       name,
       phone,
       age,
       gender,
     };
 
-    navigation.navigate("Payment", { ticketDetails });
+    setPassengers([...passengers, passengerData]);
+
+    if (currentIndex + 1 < selectedSeats.length) {
+      // Move to next passenger
+      setCurrentIndex(currentIndex + 1);
+      setName("");
+      setPhone("");
+      setAge("");
+      setGender("Male");
+    } else {
+      // All passengers entered — save to Firestore
+      try {
+        for (let passenger of [...passengers, passengerData]) {
+          await addDoc(collection(db, "bookings"), passenger);
+        }
+        Alert.alert("Success", "Booking confirmed for all passengers!");
+        navigation.navigate("Home"); // or TicketSummary, etc.
+      } catch (error) {
+        console.error("Error saving booking:", error);
+        Alert.alert("Error", "Something went wrong while saving booking.");
+      }
+    }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>Passenger Details</Text>
+      <Text style={styles.heading}>
+        Passenger {currentIndex + 1} of {selectedSeats.length}
+      </Text>
 
       <TextInput
         style={styles.input}
@@ -67,7 +105,7 @@ const TicketFormScreen = () => {
         <Picker.Item label="Other" value="Other" />
       </Picker>
 
-      <Button title="Confirm & Pay" onPress={handleSubmit} />
+      <Button title="Next" onPress={handleSubmit} />
     </View>
   );
 };

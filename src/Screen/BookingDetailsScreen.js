@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -9,15 +9,15 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { addDoc, collection, Timestamp } from 'firebase/firestore';
+import { db } from '../firebaseConfig';
 
 const BookingDetailsScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { busData, selectedSeats, user } = route.params;
 
-  // Initialize passenger details for each selected seat
   const [passengers, setPassengers] = useState(
     selectedSeats.map(seat => ({
       name: user?.name || '',
@@ -36,13 +36,12 @@ const BookingDetailsScreen = () => {
     const updatedPassengers = [...passengers];
     updatedPassengers[index] = {
       ...updatedPassengers[index],
-      [field]: value
+      [field]: value,
     };
     setPassengers(updatedPassengers);
 
-    // Clear error if field is corrected
     if (errors[`${index}_${field}`]) {
-      const newErrors = {...errors};
+      const newErrors = { ...errors };
       delete newErrors[`${index}_${field}`];
       setErrors(newErrors);
     }
@@ -71,27 +70,54 @@ const BookingDetailsScreen = () => {
     return isValid;
   };
 
-  const handleConfirmBooking = () => {
+  const handleConfirmBooking = async () => {
     if (!validateForm()) {
       Alert.alert('Validation Error', 'Please correct all passenger details');
       return;
     }
 
     setLoading(true);
-    
-    const bookingDetails = {
-      busData,
-      passengers,
-      selectedSeats,
-      totalFare,
-      user,
-    };
 
-    // Navigate to payment screen after short delay
-    setTimeout(() => {
+    try {
+      const bookingDoc = {
+        userId: user?.uid || 'anonymous',
+        busId: busData.busNumber || 'N/A',
+        busName: busData.busName || '',
+        from: busData.from,
+        to: busData.to,
+        date: busData.date,
+        time: busData.departureTime,
+        farePerSeat: busData.fare,
+        totalFare: totalFare,
+        selectedSeats: selectedSeats,
+        passengers: passengers,
+        status: 'pending',
+        timestamp: Timestamp.now(),
+      };
+
+      // Save to Firestore and get the document reference
+      const docRef = await addDoc(collection(db, 'bookings'), bookingDoc);
+
       setLoading(false);
-      navigation.navigate('PaymentScreen', bookingDetails);
-    }, 500);
+      
+      // Navigate to PaymentScreen with all required parameters
+      navigation.navigate('PaymentScreen', {
+        bus: {
+          ...busData,
+          id: busData.busNumber,
+          price: busData.fare
+        },
+        passengers: passengers,
+        selectedSeats: selectedSeats,
+        totalFare: totalFare,
+        bookingId: docRef.id,  // Include the Firestore document ID
+        user: user
+      });
+    } catch (error) {
+      setLoading(false);
+      console.error('Firestore Error:', error);
+      Alert.alert('Booking Failed', 'Something went wrong while saving your booking.');
+    }
   };
 
   return (

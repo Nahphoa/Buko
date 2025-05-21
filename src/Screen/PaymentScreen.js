@@ -2,301 +2,199 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
+  ScrollView,
   StyleSheet,
   Alert,
   ActivityIndicator,
-  ScrollView,
+  TouchableOpacity
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { collection, addDoc, Timestamp } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
+import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
-// Adjust the path based on your file structure
 
 const PaymentScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { bookingDetails } = route.params || {};
+  const { bus, passengers, selectedSeats, totalFare, bookingId } = route.params || {};
   const [loading, setLoading] = useState(false);
-  const [selectedMethod, setSelectedMethod] = useState(null);
 
-  const paymentMethods = [
-    { id: 'upi', name: 'UPI Payment', icon: 'phone-portrait', description: 'Pay via Google Pay, PhonePe, etc.' },
-    { id: 'card', name: 'Credit/Debit Card', icon: 'card' },
-    { id: 'paypal', name: 'PayPal', icon: 'logo-paypal' },
-    { id: 'wallet', name: 'BUKO Wallet', icon: 'wallet' },
-  ];
+  console.log("PaymentScreen params:", route.params); // Debugging
 
-  const handlePayment = async () => {
-    if (!selectedMethod) {
-      Alert.alert('Error', 'Please select a payment method');
+  const handlePaymentConfirmation = async () => {
+    if (!bus || !passengers || !selectedSeats || !bookingId) {
+      Alert.alert('Error', 'Missing booking details');
       return;
     }
 
     setLoading(true);
-
     try {
-      // Simulate payment processing
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      // 🔥 Save booking to Firestore
-      const auth = getAuth();
-      const user = auth.currentUser;
-
-      if (!user) throw new Error('User not authenticated');
-
-      await addDoc(collection(db, 'bookings'), {
-        userId: user.uid,
-        userEmail: user.email,
-        busName: bookingDetails?.bus?.busName,
-        from: bookingDetails?.bus?.departureStation,
-        to: bookingDetails?.bus?.arrivalStation,
-        date: bookingDetails?.bus?.departureDate,
-        time: bookingDetails?.bus?.departureTime,
-        seats: bookingDetails?.selectedSeats,
-        passengers: bookingDetails?.passengers,
-        totalFare: bookingDetails?.totalFare,
-        paymentMethod: selectedMethod,
-        bookedAt: Timestamp.now(),
+      // Update the booking status in Firestore
+      await updateDoc(doc(db, 'bookings', bookingId), {
+        status: 'paid',
+        paymentDate: new Date().toISOString()
       });
 
-      // ✅ Show success alert and navigate
       Alert.alert(
         'Payment Successful',
-        `Paid via ${paymentMethods.find(m => m.id === selectedMethod)?.name}`,
+        'Your booking has been confirmed!',
         [
           {
             text: 'OK',
-            onPress: () =>
-              navigation.navigate('BookingConfirmation', { bookingDetails }),
-          },
+            onPress: () => navigation.navigate('BookingHistory')
+          }
         ]
       );
     } catch (error) {
-      Alert.alert('Payment Failed', error.message || 'Please try another payment method');
+      console.error('Payment Error:', error);
+      Alert.alert('Payment Failed', 'Could not process payment. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
+  if (!bus || !passengers || !selectedSeats) {
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.errorText}>No booking details available.</Text>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.backButtonText}>Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
-    <View style={styles.container}>
-      {/* Header with Back Button */}
-      
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.header}>Complete Payment</Text>
 
-      <ScrollView contentContainerStyle={styles.content}>
-        <Ionicons name="wallet-outline" size={60} color="#003580" style={styles.icon} />
-        <Text style={styles.title}>Complete Payment</Text>
+      <View style={styles.summaryCard}>
+        <Text style={styles.summaryTitle}>Booking Summary</Text>
+        <Text>Bus: {bus.busName} ({bus.busNumber})</Text>
+        <Text>Route: {bus.from} → {bus.to}</Text>
+        <Text>Date: {bus.date} at {bus.departureTime}</Text>
+        <Text>Seats: {selectedSeats.join(', ')}</Text>
+        <Text style={styles.total}>Total Amount: ₹{totalFare}</Text>
+      </View>
 
-        <View style={styles.tripDetails}>
-          <Text style={styles.busName}>{bookingDetails?.bus?.busName || 'BUKO Travel'}</Text>
-          <View style={styles.route}>
-            <Text style={styles.station}>{bookingDetails?.bus?.departureStation}</Text>
-            <Ionicons name="arrow-forward" size={16} color="#666" />
-            <Text style={styles.station}>{bookingDetails?.bus?.arrivalStation}</Text>
-          </View>
-          <Text style={styles.datetime}>
-            {bookingDetails?.bus?.departureDate} • {bookingDetails?.bus?.departureTime}
-          </Text>
-          <Text style={styles.passengers}>
-            {bookingDetails?.selectedSeats?.join(', ')} • {bookingDetails?.passengers?.length} passengers
-          </Text>
-        </View>
+      <View style={styles.paymentMethods}>
+        <Text style={styles.subHeader}>Select Payment Method</Text>
+        <TouchableOpacity style={styles.paymentOption}>
+          <Text>Credit/Debit Card</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.paymentOption}>
+          <Text>UPI Payment</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.paymentOption}>
+          <Text>Net Banking</Text>
+        </TouchableOpacity>
+      </View>
 
-        {/* Payment Methods */}
-        <Text style={styles.sectionTitle}>Choose Payment Method</Text>
-        {paymentMethods.map((method) => (
-          <TouchableOpacity
-            key={method.id}
-            style={[styles.methodCard, selectedMethod === method.id && styles.selectedCard]}
-            onPress={() => setSelectedMethod(method.id)}
-          >
-            <View style={styles.methodInfo}>
-              <Ionicons
-                name={method.icon}
-                size={24}
-                color={selectedMethod === method.id ? '#003580' : '#666'}
-              />
-              <View style={styles.methodTexts}>
-                <Text style={styles.methodName}>{method.name}</Text>
-                {method.description && (
-                  <Text style={styles.methodDesc}>{method.description}</Text>
-                )}
-              </View>
-            </View>
-            {selectedMethod === method.id && (
-              <Ionicons name="checkmark-circle" size={20} color="#003580" />
-            )}
-          </TouchableOpacity>
-        ))}
-
-        <View style={styles.totalContainer}>
-          <Text style={styles.totalText}>Total Amount</Text>
-          <Text style={styles.amount}>₹{bookingDetails?.totalFare?.toLocaleString() || '0'}</Text>
-        </View>
-      </ScrollView>
-
-      {/* Payment Button */}
       <TouchableOpacity
-        style={[styles.payButton, (!selectedMethod || loading) && styles.disabledButton]}
-        onPress={handlePayment}
-        disabled={!selectedMethod || loading}
+        style={[styles.payButton, loading && styles.disabledButton]}
+        onPress={handlePaymentConfirmation}
+        disabled={loading}
       >
         {loading ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.buttonText}>
-            {selectedMethod
-              ? `Pay via ${paymentMethods.find(m => m.id === selectedMethod)?.name}`
-              : 'Select Payment Method'}
-          </Text>
+          <Text style={styles.payButtonText}>Confirm Payment</Text>
         )}
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
+    padding: 16,
     backgroundColor: '#f5f5f5',
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#fff',
-    elevation: 2,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#003580',
-  },
-  content: {
-    padding: 16,
-    paddingBottom: 100,
-  },
-  icon: {
-    alignSelf: 'center',
-    marginVertical: 10,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#003580',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  tripDetails: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 16,
-    marginBottom: 20,
-    elevation: 1,
-  },
-  busName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 8,
-  },
-  route: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  station: {
-    fontSize: 15,
-    color: '#333',
-  },
-  datetime: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 6,
-  },
-  passengers: {
-    fontSize: 14,
-    color: '#28a745',
-    fontWeight: '500',
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#666',
-    marginBottom: 12,
-    marginTop: 8,
-  },
-  methodCard: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    elevation: 1,
-  },
-  selectedCard: {
-    borderWidth: 1.5,
-    borderColor: '#003580',
-  },
-  methodInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  methodTexts: {
-    marginLeft: 12,
-  },
-  methodName: {
-    fontSize: 16,
-    color: '#333',
-    fontWeight: '500',
-  },
-  methodDesc: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 2,
-  },
-  totalContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 20,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-  },
-  totalText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-  },
-  amount: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#28a745',
+    marginBottom: 20,
+    textAlign: 'center',
+    color: '#003580',
+  },
+  summaryCard: {
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 20,
+    elevation: 2,
+  },
+  summaryTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#003580',
+  },
+  total: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 10,
+    color: '#4CAF50',
+  },
+  paymentMethods: {
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 20,
+    elevation: 2,
+  },
+  subHeader: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 12,
+    color: '#003580',
+  },
+  paymentOption: {
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 6,
+    marginBottom: 10,
   },
   payButton: {
     backgroundColor: '#003580',
     padding: 16,
     borderRadius: 8,
-    margin: 16,
     alignItems: 'center',
-    position: 'absolute',
-    bottom: 0,
-    left: 16,
-    right: 16,
+    marginTop: 10,
+  },
+  payButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   disabledButton: {
-    backgroundColor: '#aaa',
+    opacity: 0.6,
   },
-  buttonText: {
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#f44336',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  backButton: {
+    backgroundColor: '#003580',
+    padding: 12,
+    borderRadius: 6,
+    width: '60%',
+    alignItems: 'center',
+  },
+  backButtonText: {
     color: '#fff',
-    fontWeight: 'bold',
     fontSize: 16,
   },
 });

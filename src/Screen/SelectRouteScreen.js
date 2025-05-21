@@ -6,7 +6,9 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 const SelectRouteScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { type, from = '', to = '' } = route.params; // Default values for `from` and `to`
+  
+  // Safely extract params with defaults
+  const { type = 'from', from = '', to = '' } = route.params || {};
 
   // List of locations
   const locations = [
@@ -22,40 +24,47 @@ const SelectRouteScreen = () => {
     { id: '10', name: 'Longleng' },
   ];
 
-  // Function to handle location selection
+  // Improved navigation handler
   const handleLocationSelect = (location) => {
-    console.log('Selected Location:', location.name);
-    console.log('Navigating to Home with:', { from: type === 'from' ? location.name : from, to: type === 'to' ? location.name : to });
+    const params = {
+      from: type === 'from' ? location.name : from,
+      to: type === 'to' ? location.name : to
+    };
 
-    if (type === 'from') {
-      navigation.navigate('Main', { screen: 'Home', params: { from: location.name, to } });
-    } else {
-      navigation.navigate('Main', { screen: 'Home', params: { from, to: location.name } });
-    }
+    // Navigate back to Home with updated params
+    navigation.navigate('Home', params);
   };
 
   return (
     <View style={styles.container}>
-      {/* Header */}
+      {/* Header with improved back navigation */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#003580" />
+        <TouchableOpacity 
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Select {type === 'from' ? 'From' : 'To'}</Text>
+        <Text style={styles.headerTitle}>
+          Select {type === 'from' ? 'Departure' : 'Destination'}
+        </Text>
       </View>
 
-      {/* Location List */}
+      {/* Location List with improved UI */}
       <FlatList
         data={locations}
         keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContainer}
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.locationItem}
             onPress={() => handleLocationSelect(item)}
+            activeOpacity={0.7}
           >
             <Text style={styles.locationText}>{item.name}</Text>
+            <Ionicons name="chevron-forward" size={20} color="#ccc" />
           </TouchableOpacity>
         )}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
     </View>
   );
@@ -64,28 +73,40 @@ const SelectRouteScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
     backgroundColor: '#fff',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginLeft: 10,
-    color: '#003580',
-  },
-  locationItem: {
     padding: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
+    borderBottomColor: '#e0e0e0',
+  },
+  backButton: {
+    padding: 5,
+    marginRight: 10,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#003580',
+  },
+  listContainer: {
+    paddingHorizontal: 15,
+  },
+  locationItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 15,
   },
   locationText: {
     fontSize: 16,
     color: '#333',
+  },
+  separator: {
+    height: 1,
+    backgroundColor: '#f0f0f0',
   },
 });
 

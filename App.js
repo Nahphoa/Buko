@@ -4,8 +4,8 @@ import React from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
 
-import StackNavigator from './StackNavigator';
-import { AuthProvider } from './src/context/AuthContext'; // ✅ Ensure this matches your file name
+import StackNavigator from './src/navigation/StackNavigator'; // ✅ FIXED path
+import { AuthProvider } from './src/context/AuthContext'; // ✅ Matches your structure
 
 export default function App() {
   return (

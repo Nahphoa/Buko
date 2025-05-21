@@ -3,19 +3,17 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import app from '../firebaseConfig'; // ✅ Ensure Firebase is initialized
+import app from '../firebaseConfig';
 
-// Create Auth context
 const AuthContext = createContext();
 
-// AuthProvider component
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const auth = getAuth(app); // ✅ Pass initialized app
+    const auth = getAuth(app);
     const unsubscribe = onAuthStateChanged(
       auth,
       (user) => {
@@ -31,8 +29,6 @@ export const AuthProvider = ({ children }) => {
     return unsubscribe;
   }, []);
 
-  const value = { user, loading, error };
-
   if (loading) {
     return (
       <View style={styles.center}>
@@ -42,14 +38,9 @@ export const AuthProvider = ({ children }) => {
     );
   }
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={{ user, loading, error }}>{children}</AuthContext.Provider>;
 };
 
-// Custom hook
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {

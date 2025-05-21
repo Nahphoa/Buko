@@ -8,7 +8,13 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  orderBy,
+} from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { useAuth } from '../context/AuthContext';
 
@@ -19,7 +25,11 @@ const BookingHistoryScreen = () => {
 
   useEffect(() => {
     const fetchBookings = async () => {
-      if (!user?.uid) return;
+      if (!user?.uid) {
+        setBookings([]);
+        setLoading(false);
+        return;
+      }
 
       try {
         const q = query(
@@ -29,7 +39,11 @@ const BookingHistoryScreen = () => {
         );
         const snapshot = await getDocs(q);
 
-        const fetched = snapshot.docs.map(doc => doc.data());
+        const fetched = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
         setBookings(fetched);
       } catch (error) {
         console.error('Error fetching bookings:', error);
@@ -45,7 +59,7 @@ const BookingHistoryScreen = () => {
     if (!Array.isArray(passengers)) return null;
 
     return passengers.map((p, idx) => (
-      <Text key={idx} style={styles.item}>
+      <Text key={idx} style={styles.passengerItem}>
         {p.name} ({p.age}, {p.gender}) - Seat: {selectedSeats?.[idx] || 'N/A'}
       </Text>
     ));
@@ -53,21 +67,19 @@ const BookingHistoryScreen = () => {
 
   const renderItem = ({ item }) => (
     <View style={styles.bookingCard}>
-      <Text style={styles.item}>Bus: {item.bus?.name || 'Unknown'}</Text>
+      <Text style={styles.item}>Bus: {item.busName || 'Unknown'}</Text>
       <Text style={styles.item}>
-        From: {item.bus?.from || 'N/A'} → {item.bus?.to || 'N/A'}
+        From: {item.from || 'N/A'} → {item.to || 'N/A'}
       </Text>
       <Text style={styles.item}>
-        Date: {item.bus?.date || 'N/A'} at {item.bus?.time || 'N/A'}
+        Date: {item.date || 'N/A'} at {item.time || 'N/A'}
       </Text>
 
-      <Text style={[styles.item, { marginTop: 4, fontWeight: '600' }]}>
-        Passengers:
-      </Text>
+      <Text style={[styles.item, styles.passengerHeader]}>Passengers:</Text>
       {renderPassengerList(item.passengers, item.selectedSeats)}
 
-      <Text style={styles.item}>Total Fare: ₹{item.totalFare}</Text>
-      <Text style={styles.item}>Status: {item.status || 'N/A'}</Text>
+      <Text style={styles.item}>Total Fare: ₹{item.totalFare || '0'}</Text>
+      <Text style={styles.item}>Status: {item.status || 'Confirmed'}</Text>
     </View>
   );
 
@@ -81,9 +93,10 @@ const BookingHistoryScreen = () => {
       ) : (
         <FlatList
           data={bookings}
-          keyExtractor={(item, index) => index.toString()}
+          keyExtractor={item => item.id}
           renderItem={renderItem}
           contentContainerStyle={{ paddingBottom: 20 }}
+          showsVerticalScrollIndicator={false}
         />
       )}
     </View>
@@ -117,6 +130,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 4,
     color: '#333',
+  },
+  passengerHeader: {
+    marginTop: 8,
+    fontWeight: '600',
+  },
+  passengerItem: {
+    fontSize: 13,
+    marginLeft: 10,
+    color: '#555',
+    marginBottom: 2,
   },
 });
 

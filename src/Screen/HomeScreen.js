@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Image, StyleSheet, Text, TouchableOpacity, View, KeyboardAvoidingView,
   Platform, Modal, Alert, ActivityIndicator
@@ -15,20 +15,13 @@ const HomeScreen = ({ navigation, route }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    console.log('Received route.params:', route.params);
     if (route.params?.from) setFrom(route.params.from);
     if (route.params?.to) setTo(route.params.to);
-  }, [route.params?.from, route.params?.to]);
+  }, [route.params]);
 
-  const handleSearch = useCallback(() => {
-    if (!from.trim() || !to.trim() || !date.trim()) {
-      Alert.alert(
-        'Error',
-        'Please fill in all fields:\n\n' +
-        `From: ${from || 'Not selected'}\n` +
-        `To: ${to || 'Not selected'}\n` +
-        `Date: ${date || 'Not selected'}`
-      );
+  const handleSearch = () => {
+    if (!from || !to || !date) {
+      Alert.alert('Missing Fields', 'Please select From, To, and Date.');
       return;
     }
 
@@ -37,25 +30,25 @@ const HomeScreen = ({ navigation, route }) => {
     setTimeout(() => {
       const filteredBusData = busData
         .filter((route) => route.from === from && route.to === to)
-        .flatMap((route) => route.buses.map((bus) => ({ ...bus, from, to, date })));
-
-      console.log('Filtered busData:', filteredBusData);
+        .flatMap((route) =>
+          route.buses.map((bus) => ({ ...bus, from, to, date }))
+        );
 
       setIsLoading(false);
       navigation.navigate('SearchBusScreen', { busData: filteredBusData, from, to, date });
     }, 1000);
-  }, [from, to, date, navigation]);
+  };
 
-  const handleDateSelect = useCallback((day) => {
+  const handleDateSelect = (day) => {
     setDate(day.dateString);
     setCalendarVisible(false);
-  }, []);
+  };
 
-  const formatDate = useMemo(() => (dateString) => {
+  const formatDate = (dateString) => {
     if (!dateString) return 'Date of Travel (DD/MM/YYYY)';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-GB');
-  }, []);
+    const dateObj = new Date(dateString);
+    return dateObj.toLocaleDateString('en-GB');
+  };
 
   return (
     <KeyboardAvoidingView
@@ -68,8 +61,6 @@ const HomeScreen = ({ navigation, route }) => {
         <TouchableOpacity
           style={styles.input}
           onPress={() => navigation.navigate('SelectRouteScreen', { type: 'from', from, to })}
-          accessibilityLabel="Select departure location"
-          accessibilityHint="Tap to select where you are traveling from"
         >
           <Text>{from || 'From'}</Text>
         </TouchableOpacity>
@@ -77,8 +68,6 @@ const HomeScreen = ({ navigation, route }) => {
         <TouchableOpacity
           style={styles.input}
           onPress={() => navigation.navigate('SelectRouteScreen', { type: 'to', from, to })}
-          accessibilityLabel="Select destination location"
-          accessibilityHint="Tap to select where you are traveling to"
         >
           <Text>{to || 'To'}</Text>
         </TouchableOpacity>
@@ -86,8 +75,6 @@ const HomeScreen = ({ navigation, route }) => {
         <TouchableOpacity
           style={styles.input}
           onPress={() => setCalendarVisible(true)}
-          accessibilityLabel="Select travel date"
-          accessibilityHint="Tap to select the date of travel"
         >
           <View style={styles.dateInputContent}>
             <Text>{formatDate(date)}</Text>
@@ -99,8 +86,6 @@ const HomeScreen = ({ navigation, route }) => {
           style={styles.searchButton}
           onPress={handleSearch}
           disabled={isLoading}
-          accessibilityLabel="Search for buses"
-          accessibilityHint="Tap to search for available buses"
         >
           {isLoading ? (
             <ActivityIndicator color="#fff" />
@@ -110,6 +95,7 @@ const HomeScreen = ({ navigation, route }) => {
         </TouchableOpacity>
       </View>
 
+      {/* Calendar Modal */}
       <Modal
         visible={isCalendarVisible}
         transparent
@@ -132,7 +118,6 @@ const HomeScreen = ({ navigation, route }) => {
             <TouchableOpacity
               style={styles.closeButton}
               onPress={() => setCalendarVisible(false)}
-              accessibilityLabel="Close calendar"
             >
               <Text style={styles.closeButtonText}>Close</Text>
             </TouchableOpacity>

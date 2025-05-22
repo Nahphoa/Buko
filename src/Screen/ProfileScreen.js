@@ -7,13 +7,26 @@ import {
   StyleSheet,
   Image,
   Alert,
+  Switch,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  ScrollView,
+  Platform,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
+import { auth, db } from '../firebaseConfig';
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+} from 'firebase/auth';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { useNavigation } from '@react-navigation/native';
 
 const ProfileScreen = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isSignup, setIsSignup] = useState(false);
+  const [isAdminLogin, setIsAdminLogin] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -23,6 +36,8 @@ const ProfileScreen = () => {
   const [profileImage, setProfileImage] = useState(
     'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'
   );
+  const [isLoading, setIsLoading] = useState(false);
+  const navigation = useNavigation();
 
   const handlePickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -43,21 +58,91 @@ const ProfileScreen = () => {
     }
   };
 
-  const handleAuth = () => {
-    if (!email || !password || (isSignup && !confirmPassword)) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
+  const fetchUserRole = async (uid) => {
+    const userDoc = await getDoc(doc(db, 'users', uid));
+    if (userDoc.exists()) {
+      return userDoc.data().role;
     }
+    return 'user';
+  };
 
-    if (isSignup && password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
-      return;
+  const handleAuth = async () => {
+    setIsLoading(true);
+    try {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        Alert.alert('Error', 'Please enter a valid email address');
+        return;
+      }
+
+      if (!email || !password || (isSignup && !confirmPassword)) {
+        Alert.alert('Error', 'Please fill in all fields');
+        return;
+      }
+
+      if (isSignup && password.length < 6) {
+        Alert.alert('Error', 'Password must be at least 6 characters');
+        return;
+      }
+
+      if (isSignup && password !== confirmPassword) {
+        Alert.alert('Error', 'Passwords do not match');
+        return;
+      }
+
+      if (isSignup && isAdminLogin) {
+        Alert.alert('Error', 'Admin accounts must be created through the admin panel');
+        return;
+      }
+
+      let userCredential;
+
+      if (isSignup) {
+        userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        await setDoc(doc(db, 'users', userCredential.user.uid), {
+          email,
+          role: 'user',
+          createdAt: new Date().toISOString(),
+        });
+      } else {
+        userCredential = await signInWithEmailAndPassword(auth, email, password);
+
+        if (isAdminLogin) {
+          const role = await fetchUserRole(userCredential.user.uid);
+          if (role !== 'admin') {
+            await auth.signOut();
+            Alert.alert('Error', 'Admin privileges required. Please use regular login.');
+            return;
+          }
+        }
+      }
+
+      const role = await fetchUserRole(userCredential.user.uid);
+      const userData = {
+        email: userCredential.user.email,
+        uid: userCredential.user.uid,
+        role,
+      };
+
+      setUser(userData);
+      setIsLoggedIn(true);
+      Alert.alert('Success', isSignup ? 'Account created successfully!' : 'Logged in successfully!');
+    } catch (error) {
+      let errorMessage = error.message;
+
+      if (error.code === 'auth/invalid-credential') {
+        errorMessage = isAdminLogin
+          ? 'Invalid admin credentials. Please check your email and password.'
+          : 'Invalid email or password. Please try again.';
+      } else if (error.code === 'auth/email-already-in-use') {
+        errorMessage = 'This email is already registered. Please login instead.';
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = 'Password should be at least 6 characters';
+      }
+
+      Alert.alert('Authentication Error', errorMessage);
+    } finally {
+      setIsLoading(false);
     }
-
-    const userData = { email };
-    setUser(userData);
-    setIsLoggedIn(true);
-    Alert.alert('Success', isSignup ? 'Account created!' : 'Logged in!');
   };
 
   const handleLogout = () => {
@@ -67,6 +152,7 @@ const ProfileScreen = () => {
     setConfirmPassword('');
     setUser(null);
     setProfileImage('https://cdn-icons-png.flaticon.com/512/3135/3135715.png');
+    setIsAdminLogin(false);
   };
 
   if (isLoggedIn && user) {
@@ -77,80 +163,134 @@ const ProfileScreen = () => {
         </TouchableOpacity>
         <Text style={styles.title}>Welcome,</Text>
         <Text style={styles.email}>{user.email}</Text>
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Text style={styles.logoutButtonText}>Logout</Text>
+        <Text style={styles.roleText}>Role: {user.role}</Text>
+
+        {user.role === 'admin' && (
+          <TouchableOpacity
+            style={styles.adminButton}
+            onPress={() => navigation.navigate('AdminPanel')}
+          >
+            <Text style={styles.adminButtonText}>Go to Admin Panel</Text>
+          </TouchableOpacity>
+        )}
+
+        <TouchableOpacity
+          style={styles.logoutButton}
+          onPress={handleLogout}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.logoutButtonText}>Logout</Text>
+          )}
         </TouchableOpacity>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>{isSignup ? 'Sign Up' : 'Login'}</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        keyboardType="email-address"
-        value={email}
-        onChangeText={setEmail}
-      />
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={{ flex: 1 }}
+    >
+      <ScrollView contentContainerStyle={styles.container}>
+        <Text style={styles.title}>{isSignup ? 'Sign Up' : 'Login'}</Text>
 
-      <View style={styles.passwordContainer}>
+        {!isSignup && (
+          <View style={styles.adminToggleContainer}>
+            <Text style={styles.adminToggleText}>Admin Login</Text>
+            <Switch
+              value={isAdminLogin}
+              onValueChange={setIsAdminLogin}
+              trackColor={{ false: '#767577', true: '#003580' }}
+              thumbColor={isAdminLogin ? '#f5dd4b' : '#f4f3f4'}
+            />
+          </View>
+        )}
+
         <TextInput
-          style={styles.passwordInput}
-          placeholder="Password"
-          secureTextEntry={!showPassword}
-          value={password}
-          onChangeText={setPassword}
+          style={styles.input}
+          placeholder="Email"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          value={email}
+          onChangeText={setEmail}
         />
-        <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-          <Ionicons
-            name={showPassword ? 'eye-off' : 'eye'}
-            size={20}
-            color="#888"
-          />
-        </TouchableOpacity>
-      </View>
 
-      {isSignup && (
         <View style={styles.passwordContainer}>
           <TextInput
             style={styles.passwordInput}
-            placeholder="Confirm Password"
-            secureTextEntry={!showConfirmPassword}
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
+            placeholder="Password"
+            secureTextEntry={!showPassword}
+            value={password}
+            onChangeText={setPassword}
+            autoCapitalize="none"
           />
-          <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+          <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
             <Ionicons
-              name={showConfirmPassword ? 'eye-off' : 'eye'}
+              name={showPassword ? 'eye-off' : 'eye'}
               size={20}
               color="#888"
             />
           </TouchableOpacity>
         </View>
-      )}
 
-      <TouchableOpacity style={styles.button} onPress={handleAuth}>
-        <Text style={styles.buttonText}>{isSignup ? 'Sign Up' : 'Login'}</Text>
-      </TouchableOpacity>
+        {isSignup && (
+          <View style={styles.passwordContainer}>
+            <TextInput
+              style={styles.passwordInput}
+              placeholder="Confirm Password"
+              secureTextEntry={!showConfirmPassword}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              autoCapitalize="none"
+            />
+            <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+              <Ionicons
+                name={showConfirmPassword ? 'eye-off' : 'eye'}
+                size={20}
+                color="#888"
+              />
+            </TouchableOpacity>
+          </View>
+        )}
 
-      <TouchableOpacity onPress={() => setIsSignup(!isSignup)}>
-        <Text style={styles.switchText}>
-          {isSignup
-            ? 'Already have an account? Login'
-            : "Don't have an account? Sign Up"}
-        </Text>
-      </TouchableOpacity>
-    </View>
+        <TouchableOpacity
+          style={[styles.button, isLoading && styles.disabledButton]}
+          onPress={handleAuth}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>
+              {isSignup ? 'Sign Up' : isAdminLogin ? 'Login as Admin' : 'Login'}
+            </Text>
+          )}
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => {
+            setIsSignup(!isSignup);
+            setIsAdminLogin(false);
+          }}
+          disabled={isLoading}
+        >
+          <Text style={styles.switchText}>
+            {isSignup
+              ? 'Already have an account? Login'
+              : "Don't have an account? Sign Up"}
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
-export default ProfileScreen;
-
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
@@ -193,6 +333,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10,
   },
+  disabledButton: {
+    backgroundColor: '#cccccc',
+  },
   buttonText: {
     color: '#fff',
     fontWeight: 'bold',
@@ -213,8 +356,14 @@ const styles = StyleSheet.create({
   },
   email: {
     fontSize: 18,
-    marginBottom: 20,
+    marginBottom: 10,
     color: '#333',
+  },
+  roleText: {
+    fontSize: 16,
+    marginBottom: 20,
+    color: '#666',
+    fontStyle: 'italic',
   },
   logoutButton: {
     backgroundColor: '#d9534f',
@@ -228,4 +377,30 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
   },
+  adminButton: {
+    backgroundColor: '#28a745',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 10,
+    width: '60%',
+    alignItems: 'center',
+  },
+  adminButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  adminToggleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginBottom: 15,
+  },
+  adminToggleText: {
+    fontSize: 16,
+    color: '#003580',
+    fontWeight: 'bold',
+  },
 });
+
+export default ProfileScreen;

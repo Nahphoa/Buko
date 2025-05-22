@@ -2,6 +2,10 @@
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
+export const verifyPayment = async (paymentId, bookingId) => {
+  // Add your payment verification logic here
+};
+
 export const savePassengerData = async (passenger) => {
   try {
     const docRef = await addDoc(collection(db, 'passengers'), passenger);

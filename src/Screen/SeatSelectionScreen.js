@@ -62,31 +62,26 @@ const SeatSelectionScreen = () => {
     }
   };
 
-  const confirmBooking = () => {
+  const proceedToPassengerDetails = () => {
     if (selectedSeats.length === 0) {
       Alert.alert('No Seats Selected', 'Please select at least one seat.');
       return;
     }
 
-    const bookingData = {
-      busData: {
+    navigation.navigate('PassengerDetails', {
+      bus: {
         busId,
         busName,
         from,
         to,
         date,
         departureTime,
-        fare: price,
+        price,
+        busNumber: busId,
       },
-      selectedSeats: selectedSeats.map((s) => s.id),
-      user,
-    };
-
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      navigation.navigate('BookingDetailsScreen', bookingData);
-    }, 500);
+      selectedSeats: selectedSeats.map(s => s.id),
+      user
+    });
   };
 
   const totalPrice = selectedSeats.length * price;
@@ -116,9 +111,6 @@ const SeatSelectionScreen = () => {
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={24} color="black" />
-          </TouchableOpacity>
           <Text style={styles.headerTitle}>Select Seats</Text>
           <View style={{ width: 24 }} />
         </View>
@@ -171,22 +163,38 @@ const SeatSelectionScreen = () => {
             {lastRow.map((seat) => renderSeat(seat))}
           </View>
         </View>
+
+        <View style={styles.selectionSummary}>
+          <Text style={styles.summaryText}>
+            Selected: {selectedSeats.length} seat(s)
+          </Text>
+          <Text style={styles.summaryText}>
+            Total: ₹{totalPrice}
+          </Text>
+        </View>
       </ScrollView>
 
       <View style={styles.footer}>
         <View style={styles.priceContainer}>
           <Text style={styles.priceLabel}>Total Price:</Text>
-          <Text style={styles.priceValue}>Rs. {totalPrice}</Text>
+          <Text style={styles.priceValue}>₹{totalPrice}</Text>
         </View>
         <TouchableOpacity
-          style={styles.bookButton}
-          onPress={confirmBooking}
-          disabled={loading}
+          style={[
+            styles.bookButton,
+            selectedSeats.length === 0 && styles.disabledButton
+          ]}
+          onPress={proceedToPassengerDetails}
+          disabled={loading || selectedSeats.length === 0}
         >
           {loading ? (
             <ActivityIndicator color="white" />
           ) : (
-            <Text style={styles.bookButtonText}>Confirm Booking</Text>
+            <Text style={styles.bookButtonText}>
+              {selectedSeats.length > 0 ? 
+                `Continue (${selectedSeats.length} seat(s))` : 
+                'Select Seats'}
+            </Text>
           )}
         </TouchableOpacity>
       </View>
@@ -219,6 +227,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     padding: 15,
+    marginBottom: 10,
   },
   legendItem: { flexDirection: 'row', alignItems: 'center' },
   legendColor: {
@@ -273,6 +282,20 @@ const styles = StyleSheet.create({
     marginTop: 20,
     flexWrap: 'wrap',
   },
+  selectionSummary: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: '#f9f9f9',
+    marginHorizontal: 15,
+    borderRadius: 8,
+    marginBottom: 20,
+  },
+  summaryText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
   footer: {
     position: 'absolute',
     bottom: 0,
@@ -294,6 +317,11 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 25,
     borderRadius: 5,
+    minWidth: 200,
+    alignItems: 'center',
+  },
+  disabledButton: {
+    backgroundColor: '#cccccc',
   },
   bookButtonText: {
     color: 'white',

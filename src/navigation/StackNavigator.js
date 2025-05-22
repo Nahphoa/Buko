@@ -1,5 +1,3 @@
-// src/navigation/StackNavigator.js
-
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { NavigationContainer } from '@react-navigation/native';
@@ -14,10 +12,11 @@ import SelectRouteScreen from '../Screen/SelectRouteScreen';
 import SearchBusScreen from '../Screen/SearchBusScreen';
 import BusListScreen from '../Screen/BusListScreen';
 import SeatSelectionScreen from '../Screen/SeatSelectionScreen';
+import PassengerDetailsScreen from '../Screen/PassengerDetailsScreen';
 import BookingDetailsScreen from '../Screen/BookingDetailsScreen';
 import PaymentScreen from '../Screen/PaymentScreen';
 import BookingConfirmationScreen from '../Screen/BookingConfirmationScreen';
-import BookingHistoryScreen from '../Screen/BookingHistoryScreen'; // ✅ Add this
+import BookingHistoryScreen from '../Screen/BookingHistoryScreen';
 
 // Bottom Tabs
 import BottomTabs from './BottomTabs';
@@ -40,12 +39,41 @@ export default function StackNavigator() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Home">
-        {/* Public Screens */}
-        <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="SignUp" component={SignUpScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ headerShown: false }} />
+      <Stack.Navigator initialRouteName={user ? "Main" : "Home"}>
+        {/* Public Screens (Unauthenticated) */}
+        {!user && (
+          <>
+            <Stack.Screen 
+              name="Home" 
+              component={HomeScreen} 
+              options={{ headerShown: false }} 
+            />
+            <Stack.Screen 
+              name="Login" 
+              component={LoginScreen} 
+              options={{ headerShown: false }} 
+            />
+            <Stack.Screen 
+              name="SignUp" 
+              component={SignUpScreen} 
+              options={{ headerShown: false }} 
+            />
+            <Stack.Screen 
+              name="ForgotPassword" 
+              component={ForgotPasswordScreen} 
+              options={{ headerShown: false }} 
+            />
+          </>
+        )}
+
+        {/* Main App (Authenticated) */}
+        {user && (
+          <Stack.Screen 
+            name="Main" 
+            component={BottomTabs} 
+            options={{ headerShown: false }} 
+          />
+        )}
 
         {/* Booking Flow (Available to all users) */}
         <Stack.Screen
@@ -67,10 +95,28 @@ export default function StackNavigator() {
           }}
         />
         <Stack.Screen
+          name="BusListScreen"
+          component={BusListScreen}
+          options={{
+            title: 'Available Buses',
+            headerTitleAlign: 'center',
+            headerTintColor: '#003580',
+          }}
+        />
+        <Stack.Screen
           name="SeatSelectionScreen"
           component={SeatSelectionScreen}
           options={{
             title: 'Select Seats',
+            headerTitleAlign: 'center',
+            headerTintColor: '#003580',
+          }}
+        />
+        <Stack.Screen
+          name="PassengerDetails"
+          component={PassengerDetailsScreen}
+          options={{
+            title: 'Passenger Details',
             headerTitleAlign: 'center',
             headerTintColor: '#003580',
           }}
@@ -94,6 +140,16 @@ export default function StackNavigator() {
           }}
         />
         <Stack.Screen
+          name="BookingConfirmationScreen"
+          component={BookingConfirmationScreen}
+          options={{
+            title: 'Booking Confirmed',
+            headerTitleAlign: 'center',
+            headerTintColor: '#003580',
+            headerLeft: () => null, // Disable back button
+          }}
+        />
+        <Stack.Screen
           name="BookingHistoryScreen"
           component={BookingHistoryScreen}
           options={{
@@ -102,32 +158,6 @@ export default function StackNavigator() {
             headerTintColor: '#003580',
           }}
         />
-
-        {/* Authenticated Only Screens */}
-        {user && (
-          <>
-            <Stack.Screen name="Main" component={BottomTabs} options={{ headerShown: false }} />
-            <Stack.Screen
-              name="BusListScreen"
-              component={BusListScreen}
-              options={{
-                title: 'Available Buses',
-                headerTitleAlign: 'center',
-                headerTintColor: '#003580',
-              }}
-            />
-            <Stack.Screen
-              name="BookingConfirmationScreen"
-              component={BookingConfirmationScreen}
-              options={{
-                title: 'Booking Confirmed',
-                headerTitleAlign: 'center',
-                headerTintColor: '#003580',
-                headerLeft: () => null, // disable back button
-              }}
-            />
-          </>
-        )}
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -1,15 +1,15 @@
+// src/App.js
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard'; // Create this next
-
+import AdminLogin from './screens/AdminLogin';
+import AdminDashboard from './screens/AdminDashboard';
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/" element={<AdminLogin />} />
+        <Route path="/dashboard" element={<AdminDashboard />} />
       </Routes>
     </Router>
   );

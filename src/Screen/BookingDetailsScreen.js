@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,27 +10,41 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { addDoc, collection, Timestamp } from 'firebase/firestore';
-import { db } from '../firebaseConfig';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { db, auth } from '../firebaseConfig';
+import { onAuthStateChanged } from 'firebase/auth';
 
 const BookingDetailsScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { busData, selectedSeats, user } = route.params;
-
-  const [passengers, setPassengers] = useState(
-    selectedSeats.map(seat => ({
-      name: user?.name || '',
-      phone: user?.phone || '',
-      age: '',
-      gender: 'male',
-      seat,
-    }))
-  );
-
+  const { busData, selectedSeats } = route.params || {};
+  
+  const [user, setUser] = useState(null);
+  const [passengers, setPassengers] = useState([]);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const totalFare = busData.fare * selectedSeats.length;
+
+  // Initialize passengers data when component mounts or params change
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      
+      if (busData && selectedSeats) {
+        setPassengers(
+          selectedSeats.map(seat => ({
+            name: currentUser?.displayName || '',
+            email: currentUser?.email || '',
+            phone: '',
+            age: '',
+            gender: 'male',
+            seat,
+          }))
+        );
+      }
+    });
+
+    return unsubscribe;
+  }, [busData, selectedSeats]);
 
   const handleInputChange = (index, field, value) => {
     const updatedPassengers = [...passengers];
@@ -40,6 +54,7 @@ const BookingDetailsScreen = () => {
     };
     setPassengers(updatedPassengers);
 
+    // Clear error if field is corrected
     if (errors[`${index}_${field}`]) {
       const newErrors = { ...errors };
       delete newErrors[`${index}_${field}`];
@@ -52,16 +67,23 @@ const BookingDetailsScreen = () => {
     let isValid = true;
 
     passengers.forEach((passenger, index) => {
-      if (!passenger.name.trim()) {
+      if (!passenger.name?.trim()) {
         newErrors[`${index}_name`] = 'Name is required';
         isValid = false;
       }
-      if (!passenger.phone.trim() || !/^\d{10,15}$/.test(passenger.phone)) {
+      
+      if (!passenger.phone?.trim() || !/^\d{10,15}$/.test(passenger.phone)) {
         newErrors[`${index}_phone`] = 'Valid phone required (10-15 digits)';
         isValid = false;
       }
+      
       if (!passenger.age || isNaN(passenger.age) || passenger.age < 1 || passenger.age > 120) {
         newErrors[`${index}_age`] = 'Valid age required (1-120)';
+        isValid = false;
+      }
+      
+      if (!passenger.email?.includes('@')) {
+        newErrors[`${index}_email`] = 'Valid email required';
         isValid = false;
       }
     });
@@ -76,68 +98,97 @@ const BookingDetailsScreen = () => {
       return;
     }
 
+    if (!user) {
+      Alert.alert('Authentication Required', 'Please sign in to continue');
+      navigation.navigate('Login');
+      return;
+    }
+
     setLoading(true);
 
     try {
+      const bookingId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const totalFare = busData.fare * selectedSeats.length;
+
       const bookingDoc = {
-        userId: user?.uid || 'anonymous',
-        busId: busData.busNumber || 'N/A',
-        busName: busData.busName || '',
+        id: bookingId,
+        userId: user.uid,
+        busId: busData.busNumber,
+        busName: busData.busName,
         from: busData.from,
         to: busData.to,
         date: busData.date,
-        time: busData.departureTime,
+        departureTime: busData.departureTime,
         farePerSeat: busData.fare,
-        totalFare: totalFare,
-        selectedSeats: selectedSeats,
-        passengers: passengers,
-        status: 'pending',
-        timestamp: Timestamp.now(),
+        totalFare,
+        selectedSeats,
+        passengers,
+        status: 'pending_payment',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
       };
 
-      // Save to Firestore and get the document reference
-      const docRef = await addDoc(collection(db, 'bookings'), bookingDoc);
+      await setDoc(doc(db, 'bookings', bookingId), bookingDoc);
 
-      setLoading(false);
-      
-      // Navigate to PaymentScreen with all required parameters
       navigation.navigate('PaymentScreen', {
+        bookingId,
         bus: {
           ...busData,
           id: busData.busNumber,
           price: busData.fare
         },
-        passengers: passengers,
-        selectedSeats: selectedSeats,
-        totalFare: totalFare,
-        bookingId: docRef.id,  // Include the Firestore document ID
-        user: user
+        passengers,
+        selectedSeats,
+        totalFare,
+        user: {
+          uid: user.uid,
+          name: user.displayName,
+          email: user.email,
+          phone: passengers[0]?.phone || ''
+        }
       });
     } catch (error) {
+      console.error('Booking Error:', error);
+      Alert.alert(
+        'Booking Failed', 
+        error.message || 'Failed to create booking. Please try again.'
+      );
+    } finally {
       setLoading(false);
-      console.error('Firestore Error:', error);
-      Alert.alert('Booking Failed', 'Something went wrong while saving your booking.');
     }
   };
+
+  if (!busData || !selectedSeats) {
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.errorText}>No booking details available</Text>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.backButtonText}>Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Fill your Details</Text>
+        <Text style={styles.headerTitle}>Passenger Details</Text>
       </View>
 
       <View style={styles.summaryCard}>
         <Text style={styles.summaryTitle}>Trip Summary</Text>
-        <Text>Bus: {busData.busName}</Text>
-        <Text>Route: {busData.from} → {busData.to}</Text>
-        <Text>Date: {busData.date}</Text>
-        <Text>Time: {busData.departureTime}</Text>
-        <Text>Seats: {selectedSeats.join(', ')}</Text>
-        <Text style={styles.total}>Total: ₹{totalFare}</Text>
+        <Text style={styles.summaryText}>Bus: {busData.busName} ({busData.busNumber})</Text>
+        <Text style={styles.summaryText}>Route: {busData.from} → {busData.to}</Text>
+        <Text style={styles.summaryText}>Date: {busData.date} at {busData.departureTime}</Text>
+        <Text style={styles.summaryText}>Seats: {selectedSeats.join(', ')}</Text>
+        <Text style={styles.totalAmount}>Total: ₹{busData.fare * selectedSeats.length}</Text>
       </View>
 
       {passengers.map((passenger, index) => (
-        <View key={index} style={styles.passengerCard}>
+        <View key={`passenger-${index}`} style={styles.passengerCard}>
           <Text style={styles.passengerTitle}>Passenger {index + 1} (Seat: {passenger.seat})</Text>
 
           <View style={styles.inputGroup}>
@@ -146,9 +197,22 @@ const BookingDetailsScreen = () => {
               style={[styles.input, errors[`${index}_name`] && styles.errorInput]}
               value={passenger.name}
               onChangeText={(text) => handleInputChange(index, 'name', text)}
-              placeholder="Enter full name"
+              placeholder="Full name"
             />
             {errors[`${index}_name`] && <Text style={styles.errorText}>{errors[`${index}_name`]}</Text>}
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Email*</Text>
+            <TextInput
+              style={[styles.input, errors[`${index}_email`] && styles.errorInput]}
+              value={passenger.email}
+              onChangeText={(text) => handleInputChange(index, 'email', text)}
+              placeholder="Email address"
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+            {errors[`${index}_email`] && <Text style={styles.errorText}>{errors[`${index}_email`]}</Text>}
           </View>
 
           <View style={styles.inputGroup}>
@@ -157,7 +221,7 @@ const BookingDetailsScreen = () => {
               style={[styles.input, errors[`${index}_phone`] && styles.errorInput]}
               value={passenger.phone}
               onChangeText={(text) => handleInputChange(index, 'phone', text)}
-              placeholder="Enter phone number"
+              placeholder="Phone number"
               keyboardType="phone-pad"
             />
             {errors[`${index}_phone`] && <Text style={styles.errorText}>{errors[`${index}_phone`]}</Text>}
@@ -169,7 +233,7 @@ const BookingDetailsScreen = () => {
               style={[styles.input, errors[`${index}_age`] && styles.errorInput]}
               value={passenger.age}
               onChangeText={(text) => handleInputChange(index, 'age', text)}
-              placeholder="Enter age"
+              placeholder="Age"
               keyboardType="numeric"
             />
             {errors[`${index}_age`] && <Text style={styles.errorText}>{errors[`${index}_age`]}</Text>}
@@ -178,18 +242,18 @@ const BookingDetailsScreen = () => {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Gender*</Text>
             <View style={styles.genderOptions}>
-              {['male', 'female', 'other'].map(gender => (
+              {['male', 'female', 'other'].map((gender) => (
                 <TouchableOpacity
                   key={gender}
                   style={[
-                    styles.genderButton,
-                    passenger.gender === gender && styles.genderSelected
+                    styles.genderOption,
+                    passenger.gender === gender && styles.genderOptionSelected
                   ]}
                   onPress={() => handleInputChange(index, 'gender', gender)}
                 >
                   <Text style={[
-                    styles.genderText,
-                    passenger.gender === gender && styles.genderTextSelected
+                    styles.genderOptionText,
+                    passenger.gender === gender && styles.genderOptionTextSelected
                   ]}>
                     {gender.charAt(0).toUpperCase() + gender.slice(1)}
                   </Text>
@@ -201,14 +265,14 @@ const BookingDetailsScreen = () => {
       ))}
 
       <TouchableOpacity
-        style={[styles.confirmButton, loading && styles.disabledButton]}
+        style={[styles.confirmButton, loading && styles.buttonDisabled]}
         onPress={handleConfirmBooking}
         disabled={loading}
       >
         {loading ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.confirmText}>Proceed to Payment</Text>
+          <Text style={styles.confirmButtonText}>Proceed to Payment</Text>
         )}
       </TouchableOpacity>
     </ScrollView>
@@ -218,25 +282,32 @@ const BookingDetailsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    padding: 16,
-    backgroundColor: '#f5f5f5',
+    padding: 20,
+    backgroundColor: '#f8f9fa',
+  },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
     marginBottom: 20,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
-    marginLeft: 15,
     color: '#003580',
   },
   summaryCard: {
     backgroundColor: '#fff',
+    borderRadius: 10,
     padding: 16,
-    borderRadius: 8,
     marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
     elevation: 2,
   },
   summaryTitle: {
@@ -245,7 +316,12 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     color: '#003580',
   },
-  total: {
+  summaryText: {
+    fontSize: 14,
+    marginBottom: 5,
+    color: '#555',
+  },
+  totalAmount: {
     fontSize: 18,
     fontWeight: 'bold',
     marginTop: 10,
@@ -253,9 +329,13 @@ const styles = StyleSheet.create({
   },
   passengerCard: {
     backgroundColor: '#fff',
+    borderRadius: 10,
     padding: 16,
-    borderRadius: 8,
     marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
     elevation: 2,
   },
   passengerTitle: {
@@ -275,7 +355,7 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
     borderColor: '#ddd',
-    borderRadius: 6,
+    borderRadius: 8,
     padding: 12,
     fontSize: 16,
     backgroundColor: '#fff',
@@ -293,39 +373,56 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 6,
   },
-  genderButton: {
+  genderOption: {
     flex: 1,
     padding: 10,
-    borderRadius: 6,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: '#ddd',
     alignItems: 'center',
     marginHorizontal: 4,
   },
-  genderSelected: {
+  genderOptionSelected: {
     backgroundColor: '#003580',
     borderColor: '#003580',
   },
-  genderText: {
+  genderOptionText: {
     color: '#333',
   },
-  genderTextSelected: {
+  genderOptionTextSelected: {
     color: '#fff',
   },
   confirmButton: {
     backgroundColor: '#003580',
-    padding: 16,
     borderRadius: 8,
+    padding: 16,
     alignItems: 'center',
     marginTop: 20,
   },
-  confirmText: {
+  confirmButtonText: {
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
   },
-  disabledButton: {
+  buttonDisabled: {
     opacity: 0.6,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#f44336',
+    marginBottom: 20,
+  },
+  backButton: {
+    backgroundColor: '#003580',
+    borderRadius: 8,
+    padding: 12,
+    width: '60%',
+    alignItems: 'center',
+  },
+  backButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 

@@ -145,6 +145,7 @@ const styles = StyleSheet.create({
     height: 130,
     width: 100,
     marginBottom: 40,
+    resizeMode: 'contain',
   },
   input: {
     height: 50,

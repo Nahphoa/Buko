@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { db } from "../firebaseConfig"; // adjust if needed
+import { db } from "../firebaseConfig";
 import { collection, addDoc } from "firebase/firestore";
 
 const TicketFormScreen = () => {
@@ -17,7 +17,7 @@ const TicketFormScreen = () => {
   const route = useRoute();
   const { bookingData } = route.params;
 
-  const { selectedSeats = [] } = bookingData;
+  const { selectedSeats = [], travelDate } = bookingData;
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [passengers, setPassengers] = useState([]);
@@ -40,6 +40,7 @@ const TicketFormScreen = () => {
       phone,
       age,
       gender,
+      travelDate, // ✅ Ensure travelDate is included
     };
 
     setPassengers([...passengers, passengerData]);
@@ -55,7 +56,11 @@ const TicketFormScreen = () => {
       // All passengers entered — save to Firestore
       try {
         for (let passenger of [...passengers, passengerData]) {
-          await addDoc(collection(db, "bookings"), passenger);
+          const passengerWithDate = {
+            ...passenger,
+            travelDate, // ✅ Re-confirm it's added during save
+          };
+          await addDoc(collection(db, "Booking"), passengerWithDate);
         }
         Alert.alert("Success", "Booking confirmed for all passengers!");
         navigation.navigate("Home"); // or TicketSummary, etc.
@@ -105,7 +110,7 @@ const TicketFormScreen = () => {
         <Picker.Item label="Other" value="Other" />
       </Picker>
 
-      <Button title="Next" onPress={handleSubmit} />
+      <Button title={currentIndex + 1 < selectedSeats.length ? "Next" : "Confirm Booking"} onPress={handleSubmit} />
     </View>
   );
 };
@@ -114,13 +119,21 @@ export default TicketFormScreen;
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1, padding: 20, backgroundColor: "#fff",
+    flex: 1,
+    padding: 20,
+    backgroundColor: "#fff",
   },
   heading: {
-    fontSize: 20, fontWeight: "bold", marginBottom: 20, textAlign: "center",
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 20,
+    textAlign: "center",
   },
   input: {
-    borderWidth: 1, borderColor: "#ccc", padding: 10,
-    borderRadius: 8, marginBottom: 15,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 15,
   },
 });

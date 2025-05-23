@@ -1,28 +1,21 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import BookingMenu from './BookingMenu'; // where you have the two buttons
+import ProfileMenu from './ProfileMenu';// where you have the two buttons
 import LoginScreen from './LoginScreen';
 import SignupScreen from './SignUpScreen';
 import { setStatusBarBackgroundColor } from 'expo-status-bar';
 
 const Stack = createNativeStackNavigator();
 
-export default function BookingScreen() {
+export default function ProfileScreen() {
   return (
     <Stack.Navigator>
-      <Stack.Screen name="BookingMenu" component={BookingMenu} options={{ headerShown: false }} />
-      <Stack.Screen name="Login" component={LoginScreen} option={{headerstyle:{
-        setStatusBarBackgroundColor:'Blue'
-      },
-        headerTintColor: '#fff',
-        headerTitleAlign: 'left',
-      }} />
-      <Stack.Screen name="Signup" component={SignupScreen} option={{headerstyle:{
-        setStatusBarBackgroundColor:'Blue'
-      },
-          headerTintColor: '#fff',
-          headerTitleAlign: 'left',
-      }}/>
+    
+      <Stack.Screen name="ProfileMenu" component={ProfileMenu} options={{ headerShown: false }} />
+
+
+     <Stack.Screen name="Login" component={LoginScreen}/>
+      <Stack.Screen name="Signup" component={SignupScreen} />
     </Stack.Navigator>
   );
 }

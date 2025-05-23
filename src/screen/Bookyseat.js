@@ -16,7 +16,7 @@ import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 const Bookyseat = ({ route }) => {
   const navigation = useNavigation();
-  const { busName, price = 0, totalSeats, busId } = route.params || {};
+  const { busName, price = 0, totalSeats, busId,from,to,travelDate } = route.params || {};
 
 const parsedTotalSeats = parseInt(totalSeats, 10);
   const finalTotalSeats = Number.isFinite(parsedTotalSeats) && parsedTotalSeats > 0 ? parsedTotalSeats : 40;
@@ -42,13 +42,16 @@ console.log("Parsed totalSeats:", finalTotalSeats);
       Alert.alert("No Seats Selected", "Please select at least one seat before booking.");
       return;
     }
-
+       const travelDate = new Date().toISOString().split("T")[0]; 
+       
     const bookingData = {
       busName,
       price,
       selectedSeats,
       totalPrice: selectedSeats.length * price,
       busId,
+      travelDate: new Date().toISOString().split("T")[0],
+      
     };
 
     const user = auth.currentUser;

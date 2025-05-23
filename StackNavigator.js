@@ -15,7 +15,7 @@ import LoginScreen from './src/screen/LoginScreen';
 import SignUpScreen from './src/screen/SignUpScreen';
 import BusListScreen from './src/screen/BusListScreen';
 import Bookyseat from './src/screen/Bookyseat';
-import BookingMenu from './src/screen/BookingMenu';
+import ProfileMenu from './src/screen/ProfileMenu';
 import ForgotPasswordScreen from './src/screen/ForgotPasswordScreen';
 import TicketFormScreen from './src/screen/TicketFormScreen';
 
@@ -37,16 +37,20 @@ const StackNavigator = () => {
             )
           }}
         />
-<MyTabs.Screen name="profile"
-          component={ProfileScreen} options={{
-            tabBarLabel: "Profile",
-            headerShown: false, tabBarIcon: ({ focused }) => focused ? (
-              <Ionicons name="person" size={24} color="#003580" />
-            ) : (
-              <Ionicons name="person-add-outline" size={24} color="black" />
-            )
-          }}
-        />
+ <MyTabs.Screen
+    name="Profile"
+    component={ProfileScreen}
+    options={{
+      tabBarLabel: 'Profile', 
+      headerShown: false,
+      tabBarIcon: ({ focused }) =>
+        focused ? (
+          <Ionicons name="person" size={24} color="#003580" />
+        ) : (
+          <Ionicons name="person-add-outline" size={24} color="black" />
+        ),
+    }}
+  />
         <MyTabs.Screen name="Bookings"
           component={BookingScreen} options={{
             tabBarLabel: "Bookings",
@@ -68,6 +72,7 @@ const StackNavigator = () => {
       screenOptions={{
     headerStyle: {
       backgroundColor: '#003580', // ✅ Blue header background
+      
     },
     headerTintColor: '#fff', // ✅ White icons/text
     headerTitleStyle: {
@@ -77,19 +82,19 @@ const StackNavigator = () => {
   }}
 >
     
-      <Stack.Screen name="Main" component={BottomTabs} option={{headerShown:false}}/>
+      <Stack.Screen name="Main" component={BottomTabs} options={{headerShown:true}}/>
       <Stack.Screen name="Home" component={HomeScreen} />
       <Stack.Screen name="SelectRoute" component={SelectRouteScreen} />
       
       <Stack.Screen name ="SignUp" component={SignUpScreen} />
-      <Stack.Screen name ="Login" component={LoginScreen}/>
+      
       <Stack.Screen name ="ForgotPassword" component={ForgotPasswordScreen} />
 
       <Stack.Screen name ="BusList" component={BusListScreen}/>
       <Stack.Screen name ="Bookyseat" component={Bookyseat}/>
       <Stack.Screen name ="Booking" component={BookingScreen} option ={{headerShown:false}} />
       <Stack.Screen name="TicketForm" component={TicketFormScreen}/>
-      
+      <Stack.Screen name ="Login" component={LoginScreen}/>
        
 
     </Stack.Navigator>

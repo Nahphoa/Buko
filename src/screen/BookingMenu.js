@@ -1,57 +1,54 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
-export default function BookingMenu({ navigation }) {
+const BookingMenu = ({ navigation }) => {
+  const menuItems = [
+    {
+      label: 'History',
+      icon: 'time-outline',
+      screen: 'History',
+    },
+    
+    
+  ];
+
   return (
-    <View style={{ flex: 1 }}>
-      <View style={styles.textContainer}>
-        <Text style={styles.headingText}>Hey,</Text>
-        <Text style={styles.headingText}>Please</Text>
-        <Text style={styles.headingText}>Register to Buko</Text>
-      </View>
-
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity 
-          onPress={() => navigation.navigate('Login')}
-          style={[styles.button, {paddingHorizontal: 50, borderColor: 'blue' }]}
+    <View style={styles.container}>
+      {menuItems.map((item, index) => (
+        <TouchableOpacity
+          key={index}
+          style={styles.item}
+          onPress={() => navigation.navigate(item.screen)}
         >
-          <Text style={[styles.buttonText, { color: 'blue' }]}>Login</Text>
+          <Ionicons name={item.icon} size={22} color="#003580" style={styles.icon} />
+          <Text style={styles.label}>{item.label}</Text>
         </TouchableOpacity>
-
-        <TouchableOpacity 
-          onPress={() => navigation.navigate('SignUp')}
-          style={[styles.button, { paddingHorizontal: 50,borderColor: 'green' }]}
-        >
-          <Text style={[styles.buttonText, { color: 'green' }]}>SignUp</Text>
-        </TouchableOpacity>
-      </View>
+      ))}
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  textContainer: {
-    paddingTop: 50,
-    paddingLeft: 100,
+  container: {
+    backgroundColor: '#fff',
+    padding: 16,
+    flex: 1,
   },
-  headingText: {
-    fontSize: 32,
-    fontWeight: 'bold',
-  },
-  buttonContainer: {
-    paddingHorizontal: 100,
-    paddingTop: 150,
+  item: {
+    flexDirection: 'row',
+    paddingVertical: 18,
+    borderBottomWidth: 1,
+    borderColor: '#eee',
     alignItems: 'center',
   },
-  button: {
-    borderWidth: 2,
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 30,
-    marginBottom: 20,
+  icon: {
+    marginRight: 12,
   },
-  buttonText: {
-    fontSize: 20,
-    fontWeight: 'bold',
+  label: {
+    fontSize: 16,
+    color: '#333',
   },
 });
+
+export default BookingMenu;

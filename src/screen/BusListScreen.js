@@ -49,6 +49,7 @@ const BusListScreen = ({ route }) => {
                <Text >Bus Name:{item.busname} </Text>
                <Text>Price: ₹{item.price}</Text>
               <Text>Time: {item.time}</Text>
+              <Text>Bus.No:{item.BusNo}</Text>
               
             
 
@@ -61,6 +62,10 @@ const BusListScreen = ({ route }) => {
                     busName: item.busname,
                     price: item.price,
                     totalSeats: Number(item.totalSeats),
+                    BusNo: item.BusNo,
+                    from: item.from,
+                    to:item.to,
+                    travelDate: item.travelDate,
                   })
                 }
               >

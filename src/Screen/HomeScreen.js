@@ -35,7 +35,12 @@ const HomeScreen = ({ navigation, route }) => {
         );
 
       setIsLoading(false);
-      navigation.navigate('SearchBusScreen', { busData: filteredBusData, from, to, date });
+      navigation.navigate('SearchBusScreen', { 
+        busData: filteredBusData, 
+        from, 
+        to, 
+        date 
+      });
     }, 1000);
   };
 
@@ -50,90 +55,136 @@ const HomeScreen = ({ navigation, route }) => {
     return dateObj.toLocaleDateString('en-GB');
   };
 
+  // Fixed navigation to Profile
+  const navigateToProfile = () => {
+    navigation.navigate('Main', { screen: 'Profile' });
+  };
+
+  // Fixed navigation to Bookings
+  const navigateToBookings = () => {
+    navigation.navigate('Main', { screen: 'Bookings' });
+  };
+
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
-      <View style={styles.innerContainer}>
-        <Image source={require("../assets/logo.png")} style={styles.logo} />
+    <View style={styles.mainContainer}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.container}
+      >
+        <View style={styles.innerContainer}>
+          <Image source={require("../assets/logo.png")} style={styles.logo} />
 
-        <TouchableOpacity
-          style={styles.input}
-          onPress={() => navigation.navigate('SelectRouteScreen', { type: 'from', from, to })}
+          <TouchableOpacity
+            style={styles.input}
+            onPress={() => navigation.navigate('SelectRouteScreen', { type: 'from', from, to })}
+          >
+            <Text style={from ? styles.selectedText : styles.placeholderText}>
+              {from || 'From'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.input}
+            onPress={() => navigation.navigate('SelectRouteScreen', { type: 'to', from, to })}
+          >
+            <Text style={to ? styles.selectedText : styles.placeholderText}>
+              {to || 'To'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.input}
+            onPress={() => setCalendarVisible(true)}
+          >
+            <View style={styles.dateInputContent}>
+              <Text style={date ? styles.selectedText : styles.placeholderText}>
+                {formatDate(date)}
+              </Text>
+              <Ionicons name="calendar-outline" size={20} color="#003580" />
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.searchButton, isLoading && styles.disabledButton]}
+            onPress={handleSearch}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Search Bus</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        {/* Calendar Modal */}
+        <Modal
+          visible={isCalendarVisible}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setCalendarVisible(false)}
         >
-          <Text>{from || 'From'}</Text>
+          <TouchableOpacity
+            style={styles.modalBackdrop}
+            activeOpacity={1}
+            onPress={() => setCalendarVisible(false)}
+          >
+            <View style={styles.calendarContainer}>
+              <Calendar
+                onDayPress={handleDateSelect}
+                markedDates={{
+                  [date]: { selected: true, selectedColor: '#003580' },
+                }}
+                minDate={new Date().toISOString().split('T')[0]}
+              />
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setCalendarVisible(false)}
+              >
+                <Text style={styles.closeButtonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      </KeyboardAvoidingView>
+
+      {/* Bottom Navigation Bar */}
+      <View style={styles.bottomNav}>
+        <TouchableOpacity 
+          style={styles.navItem}
+          onPress={() => navigation.navigate('Main', { screen: 'Home' })}
+        >
+          <Ionicons name="home" size={24} color="#003580" />
+          <Text style={[styles.navText, { color: '#003580' }]}>Home</Text>
         </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.input}
-          onPress={() => navigation.navigate('SelectRouteScreen', { type: 'to', from, to })}
+        
+        <TouchableOpacity 
+          style={styles.navItem}
+          onPress={navigateToBookings}
         >
-          <Text>{to || 'To'}</Text>
+          <Ionicons name="calendar" size={24} color="#666" />
+          <Text style={styles.navText}>Bookings</Text>
         </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.input}
-          onPress={() => setCalendarVisible(true)}
+        
+        <TouchableOpacity 
+          style={styles.navItem}
+          onPress={navigateToProfile}
         >
-          <View style={styles.dateInputContent}>
-            <Text>{formatDate(date)}</Text>
-            <Ionicons name="calendar-outline" size={20} color="#003580" />
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.searchButton}
-          onPress={handleSearch}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Search Bus</Text>
-          )}
+          <Ionicons name="person" size={24} color="#666" />
+          <Text style={styles.navText}>Profile</Text>
         </TouchableOpacity>
       </View>
-
-      {/* Calendar Modal */}
-      <Modal
-        visible={isCalendarVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setCalendarVisible(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalBackdrop}
-          activeOpacity={1}
-          onPress={() => setCalendarVisible(false)}
-        >
-          <View style={styles.calendarContainer}>
-            <Calendar
-              onDayPress={handleDateSelect}
-              markedDates={{
-                [date]: { selected: true, selectedColor: '#003580' },
-              }}
-              minDate={new Date().toISOString().split('T')[0]}
-            />
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => setCalendarVisible(false)}
-            >
-              <Text style={styles.closeButtonText}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </Modal>
-    </KeyboardAvoidingView>
+    </View>
   );
 };
 
-export default HomeScreen;
-
 const styles = StyleSheet.create({
-  container: {
+  mainContainer: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  container: {
+    flex: 1,
   },
   innerContainer: {
     flex: 1,
@@ -158,6 +209,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#fff',
   },
+  selectedText: {
+    color: '#000',
+  },
+  placeholderText: {
+    color: '#888',
+  },
   dateInputContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -171,6 +228,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
+  },
+  disabledButton: {
+    opacity: 0.7,
   },
   buttonText: {
     color: '#fff',
@@ -200,4 +260,24 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
   },
+  bottomNav: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+    backgroundColor: '#fff',
+  },
+  navItem: {
+    alignItems: 'center',
+    padding: 5,
+  },
+  navText: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 5,
+  },
 });
+
+export default HomeScreen;

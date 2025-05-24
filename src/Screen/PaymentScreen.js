@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,15 +7,13 @@ import {
   Alert,
   ActivityIndicator,
   TouchableOpacity,
-  Platform,
   Dimensions
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { doc, updateDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
-import RazorpayCheckout from 'react-native-razorpay';
+import { MaterialIcons } from '@expo/vector-icons';
 
-// Get screen dimensions for responsive design
 const { width } = Dimensions.get('window');
 
 const PaymentScreen = () => {
@@ -23,10 +21,8 @@ const PaymentScreen = () => {
   const route = useRoute();
   const { bus, passengers, selectedSeats, totalFare, bookingId, userId } = route.params || {};
   const [loading, setLoading] = useState(false);
-  const [selectedMethod, setSelectedMethod] = useState(null);
-  const [razorpayAvailable, setRazorpayAvailable] = useState(false);
+  const [selectedMethod, setSelectedMethod] = useState('card');
 
-  // Payment methods data
   const paymentMethods = [
     { id: 'card', name: 'Credit/Debit Card', icon: '💳' },
     { id: 'upi', name: 'UPI Payment', icon: '📱' },
@@ -34,133 +30,77 @@ const PaymentScreen = () => {
     { id: 'wallet', name: 'Paytm Wallet', icon: '💰' }
   ];
 
-  useEffect(() => {
-    const checkRazorpay = async () => {
-      try {
-        if (Platform.OS === 'android') {
-          const { NativeModules } = require('react-native');
-          setRazorpayAvailable(!!NativeModules.RazorpayCheckout);
-        } else {
-          setRazorpayAvailable(!!RazorpayCheckout && typeof RazorpayCheckout.open === 'function');
-        }
-      } catch (error) {
-        console.error('Razorpay check failed:', error);
-        Alert.alert('Payment Unavailable', 'Payment service is currently not working. Please try again later.');
-      }
-    };
-
-    checkRazorpay();
-  }, []);
-
-  const initiateRazorpayPayment = async () => {
-    if (!selectedMethod) {
-      Alert.alert('Error', 'Please select a payment method');
-      return;
-    }
-
-    if (!razorpayAvailable) {
-      Alert.alert('Error', 'Payment service is not ready. Please try again later.');
+  const simulatePaymentSuccess = async () => {
+    if (!bookingId) {
+      Alert.alert('Error', 'Missing booking ID. Please start the booking process again.');
       return;
     }
 
     setLoading(true);
     try {
-      const options = {
-        description: `Bus Ticket: ${bus.busName} (${bus.busNumber})`,
-        image: 'https://your-logo-url.com/logo.png',
-        currency: 'INR',
-        key: 'rzp_test_YOUR_API_KEY', // REPLACE WITH YOUR KEY
-        amount: totalFare * 100,
-        name: 'Bus Ticket Booking',
-        prefill: {
-          email: passengers[0]?.email || 'user@example.com',
-          contact: passengers[0]?.phone || '9876543210',
-          name: passengers[0]?.name || 'Passenger'
-        },
-        theme: { color: '#003580' },
-        method: {
-          [selectedMethod]: true
-        }
-      };
-
-      RazorpayCheckout.open(options)
-        .then(async (data) => {
-          await handlePaymentSuccess(data.razorpay_payment_id);
-        })
-        .catch((error) => {
-          handlePaymentFailure(error);
-        });
-    } catch (error) {
-      console.error('Payment initiation error:', error);
-      Alert.alert('Error', 'Failed to initiate payment');
-      setLoading(false);
-    }
-  };
-
-  const handlePaymentSuccess = async (paymentId) => {
-    try {
+      const paymentId = `pay_${Math.random().toString(36).substring(2, 15)}`;
+      
+      // Create payment record
       await addDoc(collection(db, 'payments'), {
-        bookingId,
-        paymentId,
-        amount: totalFare,
+        bookingId: bookingId,
+        paymentId: paymentId,
+        amount: totalFare || 0,
         currency: 'INR',
-        method: selectedMethod,
+        method: selectedMethod || 'card',
         status: 'completed',
-        userId,
+        userId: userId || 'unknown',
         timestamp: serverTimestamp()
       });
 
+      // Update booking status
       await updateDoc(doc(db, 'bookings', bookingId), {
-        status: 'paid',
-        paymentId,
-        paymentMethod: selectedMethod,
-        paidAt: serverTimestamp()
+        status: 'confirmed',
+        paymentId: paymentId,
+        paymentMethod: selectedMethod || 'card',
+        paidAt: serverTimestamp(),
+        passengers: passengers?.map(p => ({
+          name: p.name || 'Unknown',
+          age: p.age || 0,
+          gender: p.gender || 'Unknown',
+          phone: p.phone || 'Not provided',
+          email: p.email || 'Not provided'
+        })) || [],
+        seats: selectedSeats || [],
+        busDetails: {
+          name: bus?.busName || 'Unknown',
+          number: bus?.busNumber || 'Unknown',
+          from: bus?.from || 'Unknown',
+          to: bus?.to || 'Unknown',
+          date: bus?.date || new Date().toISOString(),
+          departureTime: bus?.departureTime || 'Unknown'
+        }
       });
 
-      Alert.alert(
-        'Payment Successful',
-        `Your booking is confirmed! Payment ID: ${paymentId}`,
-        [{
-          text: 'OK',
-          onPress: () => navigation.navigate('BookingConfirmation', {
-            bookingId,
-            paymentId,
-            ...route.params
-          })
-        }]
-      );
+      navigation.navigate('BookingConfirmation', {
+        bookingId,
+        paymentId,
+        bus,
+        passengers,
+        selectedSeats,
+        totalFare,
+        paymentMethod: selectedMethod
+      });
+      
     } catch (error) {
-      console.error('Database update error:', error);
-      Alert.alert(
-        'Payment Record Issue',
-        'Your payment was successful but we encountered a record-keeping issue. Please note your Payment ID.',
-        [{ text: 'OK', onPress: () => navigation.navigate('Home') }]
-      );
+      console.error('Firestore error:', error);
+      Alert.alert('Error', 'Payment processing failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handlePaymentFailure = (error) => {
-    setLoading(false);
-    let errorMessage = 'Payment was cancelled';
-    
-    if (error.error?.description) {
-      errorMessage = error.error.description;
-    } else if (error.code) {
-      errorMessage = `Error: ${error.code}`;
-    }
-
-    Alert.alert('Payment Failed', errorMessage);
-  };
-
   const handlePaymentConfirmation = () => {
     Alert.alert(
       'Confirm Payment',
-      `Pay ₹${totalFare.toLocaleString('en-IN')} via ${paymentMethods.find(m => m.id === selectedMethod)?.name}?`,
+      `Pay ₹${totalFare?.toLocaleString('en-IN') || '0'} via ${paymentMethods.find(m => m.id === selectedMethod)?.name || 'selected method'}?`,
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Confirm', onPress: initiateRazorpayPayment }
+        { text: 'Confirm', onPress: simulatePaymentSuccess }
       ]
     );
   };
@@ -168,6 +108,7 @@ const PaymentScreen = () => {
   if (!bus || !passengers || !selectedSeats) {
     return (
       <View style={styles.centered}>
+        <MaterialIcons name="error-outline" size={50} color="#f44336" />
         <Text style={styles.errorText}>Invalid booking details</Text>
         <TouchableOpacity
           style={styles.backButton}
@@ -193,6 +134,13 @@ const PaymentScreen = () => {
         <Text style={styles.summaryText}>Date: {bus.date} at {bus.departureTime}</Text>
         <Text style={styles.summaryText}>Seats: {selectedSeats.join(', ')}</Text>
         <Text style={styles.summaryText}>Passengers: {passengers.length}</Text>
+        <View style={styles.passengerDetails}>
+          {passengers.map((passenger, index) => (
+            <Text key={index} style={styles.passengerText}>
+              {passenger.name} (Seat: {selectedSeats[index]})
+            </Text>
+          ))}
+        </View>
         <Text style={styles.total}>Total: ₹{totalFare.toLocaleString('en-IN')}</Text>
       </View>
 
@@ -209,7 +157,7 @@ const PaymentScreen = () => {
             disabled={loading}
           >
             <Text style={styles.paymentMethodText}>
-              {method.icon}  {method.name} {/* Added extra space after icon */}
+              {method.icon}  {method.name}
             </Text>
             {selectedMethod === method.id && (
               <Text style={styles.selectedIcon}>✓</Text>
@@ -224,17 +172,11 @@ const PaymentScreen = () => {
         disabled={loading || !selectedMethod}
       >
         {loading ? (
-          <ActivityIndicator color="#fff" size="large" />
+          <ActivityIndicator color="#fff" />
         ) : (
           <Text style={styles.payButtonText}>Pay ₹{totalFare.toLocaleString('en-IN')}</Text>
         )}
       </TouchableOpacity>
-
-      {!razorpayAvailable && (
-        <Text style={styles.warningText}>
-          Payment service initializing... Try again in a moment.
-        </Text>
-      )}
     </ScrollView>
   );
 };
@@ -242,11 +184,11 @@ const PaymentScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    padding: width * 0.06, // 6% of screen width
+    padding: width * 0.06,
     backgroundColor: '#f5f5f5',
   },
   header: {
-    fontSize: width * 0.08, // 8% of screen width
+    fontSize: width * 0.08,
     fontWeight: 'bold',
     marginBottom: 24,
     textAlign: 'center',
@@ -273,6 +215,17 @@ const styles = StyleSheet.create({
     fontSize: width * 0.045,
     marginBottom: 8,
     color: '#333',
+  },
+  passengerDetails: {
+    marginTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+    paddingTop: 10
+  },
+  passengerText: {
+    fontSize: width * 0.04,
+    marginBottom: 5,
+    color: '#555'
   },
   total: {
     fontSize: width * 0.06,
@@ -361,12 +314,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: width * 0.045,
     fontWeight: 'bold',
-  },
-  warningText: {
-    color: '#FF9800',
-    textAlign: 'center',
-    marginTop: 12,
-    fontSize: width * 0.04,
   },
 });
 

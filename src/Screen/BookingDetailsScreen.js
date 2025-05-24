@@ -24,7 +24,6 @@ const BookingDetailsScreen = () => {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
-  // Initialize passengers data when component mounts or params change
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -54,7 +53,6 @@ const BookingDetailsScreen = () => {
     };
     setPassengers(updatedPassengers);
 
-    // Clear error if field is corrected
     if (errors[`${index}_${field}`]) {
       const newErrors = { ...errors };
       delete newErrors[`${index}_${field}`];
@@ -104,6 +102,11 @@ const BookingDetailsScreen = () => {
       return;
     }
 
+    if (!busData || !selectedSeats || selectedSeats.length === 0) {
+      Alert.alert('Error', 'Missing booking information');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -113,13 +116,15 @@ const BookingDetailsScreen = () => {
       const bookingDoc = {
         id: bookingId,
         userId: user.uid,
-        busId: busData.busNumber,
-        busName: busData.busName,
-        from: busData.from,
-        to: busData.to,
-        date: busData.date,
-        departureTime: busData.departureTime,
-        farePerSeat: busData.fare,
+        busDetails: {
+          busId: busData.busNumber,
+          busName: busData.busName,
+          from: busData.from,
+          to: busData.to,
+          date: busData.date,
+          departureTime: busData.departureTime,
+          fare: busData.fare
+        },
         totalFare,
         selectedSeats,
         passengers,
@@ -130,22 +135,21 @@ const BookingDetailsScreen = () => {
 
       await setDoc(doc(db, 'bookings', bookingId), bookingDoc);
 
-      navigation.navigate('PaymentScreen', {
+      navigation.navigate('Payment', {
         bookingId,
         bus: {
-          ...busData,
-          id: busData.busNumber,
-          price: busData.fare
+          busName: busData.busName,
+          busNumber: busData.busNumber,
+          from: busData.from,
+          to: busData.to,
+          date: busData.date,
+          departureTime: busData.departureTime,
+          fare: busData.fare
         },
         passengers,
         selectedSeats,
         totalFare,
-        user: {
-          uid: user.uid,
-          name: user.displayName,
-          email: user.email,
-          phone: passengers[0]?.phone || ''
-        }
+        userId: user.uid
       });
     } catch (error) {
       console.error('Booking Error:', error);

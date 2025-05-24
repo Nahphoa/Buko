@@ -7,11 +7,14 @@ import {
   Alert,
   ActivityIndicator,
   TouchableOpacity,
+  Dimensions,
 } from 'react-native';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { useAuth } from '../context/AuthContext';
 import { MaterialIcons } from '@expo/vector-icons';
+
+const { width } = Dimensions.get('window');
 
 const BookingConfirmationScreen = ({ route, navigation }) => {
   const { user } = useAuth();
@@ -37,7 +40,8 @@ const BookingConfirmationScreen = ({ route, navigation }) => {
         status: 'confirmed',
         paymentId: paymentId,
         paymentDate: new Date().toISOString(),
-        confirmedAt: new Date().toISOString()
+        confirmedAt: new Date().toISOString(),
+        paymentStatus: 'completed',
       });
 
       setBookingConfirmed(true);
@@ -130,9 +134,25 @@ const BookingConfirmationScreen = ({ route, navigation }) => {
               <Text style={styles.detailValue}>{selectedSeats?.join(', ')}</Text>
             </View>
             
+            <View style={styles.passengersSection}>
+              <Text style={styles.sectionTitle}>Passengers:</Text>
+              {passengers?.map((passenger, index) => (
+                <View key={index} style={styles.passengerRow}>
+                  <Text style={styles.passengerText}>
+                    {passenger.name} (Seat: {selectedSeats?.[index]})
+                  </Text>
+                  {passenger.phone && (
+                    <Text style={styles.passengerContact}>Phone: {passenger.phone}</Text>
+                  )}
+                </View>
+              ))}
+            </View>
+            
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Total Paid:</Text>
-              <Text style={[styles.detailValue, styles.totalAmount]}>₹{totalFare}</Text>
+              <Text style={[styles.detailValue, styles.totalAmount]}>
+                ₹{totalFare?.toLocaleString('en-IN')}
+              </Text>
             </View>
           </View>
           
@@ -231,6 +251,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     fontWeight: '500',
+    width: '40%',
   },
   detailValue: {
     fontSize: 14,
@@ -238,7 +259,31 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     flexShrink: 1,
     flexWrap: 'wrap',
-    maxWidth: '60%',
+    width: '60%',
+  },
+  passengersSection: {
+    marginTop: 15,
+    paddingTop: 15,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#003580',
+    marginBottom: 10,
+  },
+  passengerRow: {
+    marginBottom: 8,
+  },
+  passengerText: {
+    fontSize: 14,
+    color: '#333',
+  },
+  passengerContact: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 2,
   },
   totalAmount: {
     color: '#4CAF50',

@@ -394,12 +394,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     width: '100%',
-    marginBottom: 15,
+    marginBottom: 10,
   },
   adminToggleText: {
     fontSize: 16,
     color: '#003580',
-    fontWeight: 'bold',
   },
 });
 

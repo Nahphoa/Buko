@@ -82,8 +82,8 @@ const StackNavigator = () => {
   }}
 >
     
-      <Stack.Screen name="Main" component={BottomTabs} options={{headerShown:true}}/>
-      <Stack.Screen name="Home" component={HomeScreen} />
+      <Stack.Screen name="Main" component={BottomTabs}  option={{headerShown:true}}/>
+      <Stack.Screen name="Home" component={HomeScreen}/>
       <Stack.Screen name="SelectRoute" component={SelectRouteScreen} />
       
       <Stack.Screen name ="SignUp" component={SignUpScreen} />
@@ -95,6 +95,9 @@ const StackNavigator = () => {
       <Stack.Screen name ="Booking" component={BookingScreen} option ={{headerShown:false}} />
       <Stack.Screen name="TicketForm" component={TicketFormScreen}/>
       <Stack.Screen name ="Login" component={LoginScreen}/>
+      
+     
+  
        
 
     </Stack.Navigator>

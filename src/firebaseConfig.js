@@ -1,24 +1,27 @@
 // Import the functions you need from the Firebase SDKs
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getDatabase } from "firebase/database";
 
-// Your web app's Firebase configuration
+// ✅ Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyCX1tnBfwkFs2rsgN0eyc1ztFy1QG0NFI4",
   authDomain: "buko-aba59.firebaseapp.com",
   projectId: "buko-aba59",
-  storageBucket: "buko-aba59.firebasestorage.app",
+  databaseURL: "https://buko-aba59-default-rtdb.firebaseio.com",
+  storageBucket: "buko-aba59.appspot.com",
   messagingSenderId: "959539291084",
   appId: "1:959539291084:web:cd05953861cf491f43b369",
   measurementId: "G-1RTS0RMC47",
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// ✅ Safe initialize
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 
-// Initialize Firebase Authentication and export it
+// Export services
 const auth = getAuth(app);
 const db = getFirestore(app);
+const database = getDatabase(app);
 
-export { auth,db };
+export { auth, db, database };

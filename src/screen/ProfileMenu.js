@@ -13,16 +13,24 @@ export default function ProfileMenu({ navigation }) {
       <View style={styles.buttonContainer}>
         <TouchableOpacity 
           onPress={() => navigation.navigate('Login')}
-          style={[styles.button, {paddingHorizontal: 50, borderColor: 'blue' }]}
+          style={[styles.button, { paddingHorizontal: 50, borderColor: 'blue' }]}
         >
-          <Text style={[styles.buttonText, { color: 'blue', }]}>Login</Text>
+          <Text style={[styles.buttonText, { color: 'blue' }]}>Login</Text>
         </TouchableOpacity>
 
         <TouchableOpacity 
           onPress={() => navigation.navigate('SignUp')}
-          style={[styles.button, { paddingHorizontal: 50,borderColor: 'green' }]}
+          style={[styles.button, { paddingHorizontal: 50, borderColor: 'green' }]}
         >
           <Text style={[styles.buttonText, { color: 'green' }]}>SignUp</Text>
+        </TouchableOpacity>
+
+        {/* ✅ Admin Box */}
+        <TouchableOpacity 
+          onPress={() => navigation.navigate('AdminMenu')}
+          style={[styles.button, { paddingHorizontal: 40, borderColor: 'red' }]}
+        >
+          <Text style={[styles.buttonText, { color: 'red' }]}>Admin Panel</Text>
         </TouchableOpacity>
       </View>
     </View>

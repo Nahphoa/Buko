@@ -9,22 +9,23 @@ import AdminSignup from './AdminSignup';
 import AdminLogin from './AdminLogin';
 import AdminPage from './AdminPage';
 
+
 const Stack = createNativeStackNavigator();
 
 export default function ProfileScreen() {
   return (
     <Stack.Navigator>
     
-      <Stack.Screen name="ProfileMenu" component={ProfileMenu} options={{ headerShown: false }} />
+      <Stack.Screen name="ProfileMenu" component={ProfileMenu} options={{ headerShown:false }} />
 
 
-     <Stack.Screen name="Login" component={LoginScreen}/>
+     <Stack.Screen name="LoginScreen" component={LoginScreen}/>
       <Stack.Screen name="Signup" component={SignupScreen} />
 
-       <Stack.Screen name="AdminMenu" component={AdminMenu}/>
-     <Stack.Screen name="AdminSignup" component={AdminSignup}/>
-      <Stack.Screen name="AdminLogin" component={AdminLogin}/>
-      <Stack.Screen name="AdminPage" component={AdminPage}/>
+       <Stack.Screen name="AdminMenu" component={AdminMenu} options={{ title: 'Admin Menu'}}/>
+     <Stack.Screen name="AdminSignup" component={AdminSignup}options={{ title: 'Admin SignUp'}}/>
+      <Stack.Screen name="AdminLogin" component={AdminLogin}options={{ title: 'Admin Login'}}/>
+     <Stack.Screen name="AdminPage" component={AdminPage}options={{ title: 'Admin Panel'}}/>
 
     </Stack.Navigator>
   );

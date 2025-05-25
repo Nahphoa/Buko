@@ -1,154 +1,128 @@
+// screens/AdminSignupScreen.js
+
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity,
-  StyleSheet, ScrollView, Alert
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
 } from 'react-native';
-import { db } from '../firebaseConfig';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { collection, addDoc } from 'firebase/firestore';
+import { useNavigation } from '@react-navigation/native';
+import { auth, db } from '../firebaseConfig';
 
-export default function AdminSignup({ navigation }) {
-  const [username, setUsername] = useState('');
+export default function AdminSignupScreen({ navigation }) {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [dob, setDob] = useState('');
   const [gender, setGender] = useState('');
+  const [phone, setPhone] = useState('');
   const [source, setSource] = useState('');
   const [destination, setDestination] = useState('');
   const [adminKey, setAdminKey] = useState('');
 
-  const SECRET_ADMIN_KEY = 'ADM-CNL123'; // required to authorize signup
-
-  const handleSignUp = async () => {
+  const handleSignup = async () => {
     if (
-      !username || !email || !phone || !password ||
-      !confirmPassword || !dob || !gender || !source || !destination || !adminKey
+      !name || !email || !password || !gender || !phone ||
+      !source || !destination || !adminKey
     ) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
 
-    if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
-      return;
-    }
-
-    if (adminKey !== SECRET_ADMIN_KEY) {
-      Alert.alert('Error', 'Invalid admin key');
+    if (source === destination) {
+      Alert.alert('Error', 'Source and destination cannot be the same');
       return;
     }
 
     try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
       await addDoc(collection(db, 'admins'), {
-        username,
+        uid: user.uid,
+        name,
         email,
-        phone,
-        password, // ⚠️ Don't store plain passwords in production
-        dob,
         gender,
+        phone,
         source,
         destination,
-        adminKey // saving what user entered
+        adminKey,
+        createdAt: new Date().toISOString(),
       });
 
-      Alert.alert('Success', 'Admin registered successfully');
-      setTimeout(() => {
-        navigation.goBack();
-      }, 1500);
+      Alert.alert('Success', 'Admin account created');
+      navigation.replace('AdminPage', { source, destination });
     } catch (error) {
-      Alert.alert('Error', error.message);
+      console.error('Signup error:', error);
+      Alert.alert('Signup Error', error.message);
     }
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Please Sign Up as Admin</Text>
+     
+    <View style={styles.container}>
+      <Text style={styles.header}>Admin Signup</Text>
+      <TextInput style={styles.input} placeholder="Name" value={name} onChangeText={setName} />
+      <TextInput style={styles.input} placeholder="Email" value={email} onChangeText={setEmail} keyboardType="email-address" />
+      <TextInput style={styles.input} placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry />
+      <TextInput style={styles.input} placeholder="Gender" value={gender} onChangeText={setGender} />
+      <TextInput style={styles.input} placeholder="Phone" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
+      <TextInput style={styles.input} placeholder="Source" value={source} onChangeText={setSource} />
+      <TextInput style={styles.input} placeholder="Destination" value={destination} onChangeText={setDestination} />
+      <TextInput style={styles.input} placeholder="Admin Key" value={adminKey} onChangeText={setAdminKey} />
 
-      <TextInput style={styles.input} placeholder="Enter your username" onChangeText={setUsername} />
-      <TextInput style={styles.input} placeholder="Enter your email" onChangeText={setEmail} keyboardType="email-address" />
-      <TextInput style={styles.input} placeholder="Enter your phone number" onChangeText={setPhone} keyboardType="phone-pad" />
-      <TextInput style={styles.input} placeholder="Enter your password" onChangeText={setPassword} secureTextEntry />
-      <TextInput style={styles.input} placeholder="Confirm your password" onChangeText={setConfirmPassword} secureTextEntry />
-      <TextInput style={styles.input} placeholder="Date of Birth (DD/MM/YYYY)" onChangeText={setDob} />
-
-      <View style={styles.genderContainer}>
-        <Text style={{ fontSize: 16 }}>Gender:</Text>
-        <TouchableOpacity onPress={() => setGender('Male')} style={[styles.genderBtn, gender === 'Male' && styles.selectedGender]}>
-          <Text>Male</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => setGender('Female')} style={[styles.genderBtn, gender === 'Female' && styles.selectedGender]}>
-          <Text>Female</Text>
-        </TouchableOpacity>
-      </View>
-
-      <TextInput style={styles.input} placeholder="Source" onChangeText={setSource} />
-      <TextInput style={styles.input} placeholder="Destination" onChangeText={setDestination} />
-      <TextInput style={styles.input} placeholder="Enter Admin Key" onChangeText={setAdminKey} />
-
-      <TouchableOpacity style={styles.signupBtn} onPress={handleSignUp}>
-        <Text style={styles.signupText}>Sign Up</Text>
+      <TouchableOpacity style={styles.button} onPress={handleSignup}>
+        <Text style={styles.buttonText}>Signup</Text>
       </TouchableOpacity>
-<TouchableOpacity onPress={() => navigation.navigate('AdminLogin')}>
+
+       <TouchableOpacity onPress={() => navigation.navigate('AdminLogin')}>
         <Text style={styles.loginLink}>Already have an account? Log In</Text>
       </TouchableOpacity>
-    </ScrollView>
+    </View>
+    
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    backgroundColor: '#40E0D0',
     padding: 20,
-    backgroundColor: '#4de2c3',
-    alignItems: 'center',
     justifyContent: 'center',
   },
-  title: {
-    fontSize: 22,
+  header: {
+    fontSize: 26,
     fontWeight: 'bold',
     marginBottom: 20,
-    marginTop: 40,
     textAlign: 'center',
+    color: '#003580',
   },
   input: {
-    width: '100%',
+    backgroundColor: '#fff',
     padding: 12,
     marginBottom: 12,
-    borderWidth: 1,
-    borderRadius: 8,
-    backgroundColor: '#fff',
-  },
-  genderContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  genderBtn: {
-    marginLeft: 10,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderWidth: 1,
     borderRadius: 6,
-    backgroundColor: '#fff',
+    borderColor: '#ccc',
+    borderWidth: 1,
   },
-  selectedGender: {
-    borderColor: 'blue',
-  },
-  signupBtn: {
-    backgroundColor: '#003366',
-    padding: 14,
-    borderRadius: 8,
-    width: '100%',
+  button: {
+    backgroundColor: '#003580',
+    padding: 15,
+    borderRadius: 6,
     alignItems: 'center',
-    marginTop: 10,
   },
-  signupText: {
+  buttonText: {
     color: '#fff',
     fontWeight: 'bold',
   },
   loginLink: {
-    color: '#003366',
-    marginTop: 15,
-    textDecorationLine: 'underline',
+  color: '#003366',
+  marginTop: 15,
+  textDecorationLine: 'underline',
+  textAlign: 'center',
   },
 });

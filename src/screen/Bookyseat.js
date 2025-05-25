@@ -9,23 +9,29 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { auth } from "../firebaseConfig";
-import { db } from "../firebaseConfig";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-
-
+// import { collection, addDoc } from "firebase/firestore"; // Uncomment if storing in Firestore
+// import { db } from "../firebaseConfig";
 
 const Bookyseat = ({ route }) => {
   const navigation = useNavigation();
-  const { busName, price = 0, totalSeats, busId,from,to,travelDate } = route.params || {};
 
-const parsedTotalSeats = parseInt(totalSeats, 10);
-  const finalTotalSeats = Number.isFinite(parsedTotalSeats) && parsedTotalSeats > 0 ? parsedTotalSeats : 40;
-console.log("Received totalSeats:", totalSeats);
-console.log("Parsed totalSeats:", finalTotalSeats);
+  const {
+    busName,
+    price = 0,
+    totalSeats,
+    busId,
+    from,
+    to,
+    travelDate,
+  } = route.params || {};
 
+  const parsedTotalSeats = parseInt(totalSeats, 10);
+  const finalTotalSeats =
+    Number.isFinite(parsedTotalSeats) && parsedTotalSeats > 0
+      ? parsedTotalSeats
+      : 40;
 
-
-  const reservedSeats = []; // Add any reserved seat numbers here
+  const reservedSeats = []; // Extend this with logic if needed
   const [selectedSeats, setSelectedSeats] = useState([]);
 
   const toggleSeatSelection = (seatNumber) => {
@@ -37,43 +43,54 @@ console.log("Parsed totalSeats:", finalTotalSeats);
     );
   };
 
-  const handleBookNow = () => {
+  const handleBookNow = async () => {
     if (selectedSeats.length === 0) {
       Alert.alert("No Seats Selected", "Please select at least one seat before booking.");
       return;
     }
-       const travelDate = new Date().toISOString().split("T")[0]; 
-       
+
     const bookingData = {
       busName,
+      busId,
+      from,
+      to,
+      travelDate,
       price,
       selectedSeats,
       totalPrice: selectedSeats.length * price,
-      busId,
-      travelDate: new Date().toISOString().split("T")[0],
-      
     };
 
     const user = auth.currentUser;
 
     if (!user) {
-      // Redirect to signup if not logged in
       navigation.navigate("SignUp", {
-        redirectTo: "TicketFormScreen",
+        redirectTo: "TicketForm",
         bookingData,
       });
     } else {
-      // Go to ticket form if logged in
       navigation.navigate("TicketForm", { bookingData });
     }
+
+    // OPTIONAL: save to Firestore now or after TicketForm
+    /*
+    try {
+      await addDoc(collection(db, "bookings"), {
+        ...bookingData,
+        userId: user?.uid || "guest",
+        createdAt: serverTimestamp(),
+      });
+    } catch (error) {
+      console.error("Booking save failed:", error);
+    }
+    */
   };
 
   const totalPrice = selectedSeats.length * price;
 
+  // Generate seat layout
   const seatRows = [];
   let seatNum = 1;
-  while (seatNum <= finalTotalSeats)
- {
+  while (seatNum <= finalTotalSeats) {
     const row = [];
     if (seatNum <= parsedTotalSeats) row.push(seatNum++);
     if (seatNum <= parsedTotalSeats) row.push(seatNum++);
@@ -86,6 +103,8 @@ console.log("Parsed totalSeats:", finalTotalSeats);
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{busName}</Text>
+      <Text>{from} ➡️ {to}</Text>
+      <Text>Travel Date: {travelDate}</Text>
 
       <View style={styles.layoutBox}>
         <View style={styles.layoutHeader}>
@@ -149,7 +168,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: "bold",
-    marginBottom: 10,
+    marginBottom: 5,
   },
   layoutBox: {
     borderWidth: 1,

@@ -27,13 +27,7 @@ const HomeScreen = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor="#003580" barStyle="dark-content" />
-
-      {/* MAIN text on top-left */}
-      {/* <View style={styles.mainTextContainer}>
-        <Text style={styles.mainText}>MAIN</Text>
-      </View> */}
-
+      
       <Image source={require("../assets/logo.png")} style={styles.logo} />
 
       {/* FROM FIELD */}
@@ -74,18 +68,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-start',
     padding: 13,
-  },
-  // mainTextContainer: {
-  //   width: '100%',
-  //   alignItems: 'flex-start',
-  //   marginBottom: 10,
-  //   backcolor:'black'
-
-  // },
-  mainText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#000000',
+  
+   
+  
+  
   },
   logo: {
     height: 130,

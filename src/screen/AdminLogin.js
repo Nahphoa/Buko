@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity,
-  StyleSheet, ScrollView, Alert
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Alert,
 } from 'react-native';
 import { db } from '../firebaseConfig';
 import { collection, getDocs, query, where } from 'firebase/firestore';
@@ -35,8 +40,14 @@ export default function AdminLogin({ navigation }) {
       if (snapshot.empty) {
         Alert.alert('Login Failed', 'No admin found with these credentials');
       } else {
+        const adminDoc = snapshot.docs[0].data();
+
         Alert.alert('Success', 'Login successful!');
-        navigation.navigate('AdminPage'); // Navigate to AdminPage on success
+
+        navigation.navigate('AdminPage', {
+          source: adminDoc.source,
+          destination: adminDoc.destination,
+        });
       }
     } catch (error) {
       Alert.alert('Error', error.message);
@@ -53,27 +64,32 @@ export default function AdminLogin({ navigation }) {
         onChangeText={setEmail}
         keyboardType="email-address"
         autoCapitalize="none"
+        value={email}
       />
       <TextInput
         style={styles.input}
         placeholder="Enter your password"
         onChangeText={setPassword}
         secureTextEntry
+        value={password}
       />
       <TextInput
         style={styles.input}
         placeholder="Enter source"
         onChangeText={setSource}
+        value={source}
       />
       <TextInput
         style={styles.input}
         placeholder="Enter destination"
         onChangeText={setDestination}
+        value={destination}
       />
       <TextInput
         style={styles.input}
         placeholder="Enter Admin Key"
         onChangeText={setAdminKey}
+        value={adminKey}
       />
 
       <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
@@ -93,6 +109,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#4de2c3',
     alignItems: 'center',
     justifyContent: 'center',
+    flexGrow: 1,
   },
   title: {
     fontSize: 22,

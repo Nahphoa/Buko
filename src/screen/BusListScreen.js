@@ -2,8 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "../firebaseConfig"; 
-import { getFirestore } from "firebase/firestore";
+import { db } from "../firebaseConfig";
 
 const BusListScreen = ({ route }) => {
   const navigation = useNavigation();
@@ -14,17 +13,33 @@ const BusListScreen = ({ route }) => {
   useEffect(() => {
     const fetchBuses = async () => {
       try {
-        const q = query(
+        // Fetch from 'buses' collection (admin-added)
+        const busesQuery = query(
+          collection(db, "buses"),
+          where("source", "==", from),
+          where("destination", "==", to)
+        );
+        const busesSnapshot = await getDocs(busesQuery);
+        const busesData = busesSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        // Fetch from 'Buses' collection (manually added)
+        const busesAltQuery = query(
           collection(db, "Buses"),
           where("from", "==", from),
           where("to", "==", to)
         );
-        const querySnapshot = await getDocs(q);
-        const fetchedBuses = querySnapshot.docs.map((doc) => ({
+        const busesAltSnapshot = await getDocs(busesAltQuery);
+        const busesAltData = busesAltSnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         }));
-        setBuses(fetchedBuses);
+
+        // Merge both
+        const allBuses = [...busesData, ...busesAltData];
+        setBuses(allBuses);
       } catch (error) {
         console.error("Error fetching buses:", error.message);
       }
@@ -45,27 +60,23 @@ const BusListScreen = ({ route }) => {
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <View style={styles.busItem}>
-              
-               <Text >Bus Name:{item.busname} </Text>
-               <Text>Price: ₹{item.price}</Text>
+              <Text>Bus Name: {item.busname || item.busName}</Text>
+              <Text>Price: ₹{item.price}</Text>
               <Text>Time: {item.time}</Text>
-              <Text>Bus.No:{item.BusNo}</Text>
-              
-            
-
+              <Text>Bus.No: {item.BusNo || item.busNumber}</Text>
 
               <TouchableOpacity
                 style={styles.bookButton}
                 onPress={() =>
                   navigation.navigate("Bookyseat", {
                     busId: item.id,
-                    busName: item.busname,
+                    busName: item.busname || item.busName,
                     price: item.price,
                     totalSeats: Number(item.totalSeats),
-                    BusNo: item.BusNo,
-                    from: item.from,
-                    to:item.to,
-                    travelDate: item.travelDate,
+                    BusNo: item.BusNo || item.busNumber,
+                    from: item.from || item.source,
+                    to: item.to || item.destination,
+                    travelDate: item.travelDate || selectedDate,
                   })
                 }
               >
@@ -98,10 +109,6 @@ const styles = StyleSheet.create({
     padding: 20,
     borderBottomWidth: 1,
     marginBottom: 10,
-  },
-  busName: {
-    fontSize: 18,
-    fontWeight: "bold",
   },
   bookButton: {
     backgroundColor: "#003580",

@@ -18,6 +18,9 @@ import Bookyseat from './src/screen/Bookyseat';
 import ProfileMenu from './src/screen/ProfileMenu';
 import ForgotPasswordScreen from './src/screen/ForgotPasswordScreen';
 import TicketFormScreen from './src/screen/TicketFormScreen';
+import AdminMenu from './src/screen/AdminMenu';
+import AdminLogin from './src/screen/AdminLogin';
+
 
 
 const StackNavigator = () => {
@@ -37,6 +40,18 @@ const StackNavigator = () => {
             )
           }}
         />
+         <MyTabs.Screen name="Bookings"
+          component={BookingScreen} options={{
+            tabBarLabel: "Bookings",
+            headerShown: false,
+             tabBarIcon: ({ focused }) => focused ? (
+              <Entypo name="ticket" 
+              size={24} color="#003580" /> 
+            ) : (
+              <Ionicons name="ticket-outline" size={24} color="black" />
+            )
+          }}
+        />
  <MyTabs.Screen
     name="Profile"
     component={ProfileScreen}
@@ -51,18 +66,7 @@ const StackNavigator = () => {
         ),
     }}
   />
-        <MyTabs.Screen name="Bookings"
-          component={BookingScreen} options={{
-            tabBarLabel: "Bookings",
-            headerShown: false,
-             tabBarIcon: ({ focused }) => focused ? (
-              <Entypo name="ticket" 
-              size={24} color="#003580" /> 
-            ) : (
-              <Ionicons name="ticket-outline" size={24} color="black" />
-            )
-          }}
-        />
+       
       </MyTabs.Navigator>
     )
   }
@@ -82,7 +86,9 @@ const StackNavigator = () => {
   }}
 >
     
-      <Stack.Screen name="Main" component={BottomTabs}  option={{headerShown:true}}/>
+     
+ <Stack.Screen name="Main" component={BottomTabs} option={{headerShown:false}}/>
+
       <Stack.Screen name="Home" component={HomeScreen}/>
       <Stack.Screen name="SelectRoute" component={SelectRouteScreen} />
       
@@ -95,6 +101,7 @@ const StackNavigator = () => {
       <Stack.Screen name ="Booking" component={BookingScreen} option ={{headerShown:false}} />
       <Stack.Screen name="TicketForm" component={TicketFormScreen}/>
       <Stack.Screen name ="Login" component={LoginScreen}/>
+      <Stack.Screen name="AdminLogin" component={AdminLogin}/>
       
      
   

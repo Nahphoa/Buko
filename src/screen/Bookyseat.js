@@ -9,8 +9,8 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { auth } from "../firebaseConfig";
-// import { collection, addDoc } from "firebase/firestore"; // Uncomment if storing in Firestore
-// import { db } from "../firebaseConfig";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { db } from "../firebaseConfig";
 
 const Bookyseat = ({ route }) => {
   const navigation = useNavigation();
@@ -31,7 +31,7 @@ const Bookyseat = ({ route }) => {
       ? parsedTotalSeats
       : 40;
 
-  const reservedSeats = []; // Extend this with logic if needed
+  const reservedSeats = [];
   const [selectedSeats, setSelectedSeats] = useState([]);
 
   const toggleSeatSelection = (seatNumber) => {
@@ -56,6 +56,7 @@ const Bookyseat = ({ route }) => {
       to,
       travelDate,
       price,
+      
       selectedSeats,
       totalPrice: selectedSeats.length * price,
     };
@@ -71,8 +72,7 @@ const Bookyseat = ({ route }) => {
       navigation.navigate("TicketForm", { bookingData });
     }
 
-    // OPTIONAL: save to Firestore now or after TicketForm
-    /*
+    /* Save to Firestore */
     try {
       await addDoc(collection(db, "bookings"), {
         ...bookingData,
@@ -82,12 +82,12 @@ const Bookyseat = ({ route }) => {
     } catch (error) {
       console.error("Booking save failed:", error);
     }
-    */
+    
   };
 
   const totalPrice = selectedSeats.length * price;
 
-  // Generate seat layout
+  //  seat layout
   const seatRows = [];
   let seatNum = 1;
   while (seatNum <= finalTotalSeats) {

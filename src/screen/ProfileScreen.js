@@ -25,7 +25,7 @@ export default function ProfileScreen() {
        <Stack.Screen name="AdminMenu" component={AdminMenu} options={{ title: 'Admin Menu'}}/>
      <Stack.Screen name="AdminSignup" component={AdminSignup}options={{ title: 'Admin SignUp'}}/>
       <Stack.Screen name="AdminLogin" component={AdminLogin}options={{ title: 'Admin Login'}}/>
-     <Stack.Screen name="AdminPage" component={AdminPage}options={{ title: 'Admin Panel'}}/>
+     <Stack.Screen name="AdminPage" component={AdminPage}options={{ title: 'ADMIN PANEL'}}/>
 
     </Stack.Navigator>
   );

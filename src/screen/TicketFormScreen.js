@@ -17,7 +17,18 @@ const TicketFormScreen = () => {
   const route = useRoute();
   const { bookingData } = route.params;
 
-  const { selectedSeats = [], travelDate } = bookingData;
+  // Destructure all relevant fields
+  const {
+    selectedSeats = [],
+    travelDate,
+    from,
+    to,
+    busName,
+    busNumber,
+    time,
+    price,
+    busId
+  } = bookingData;
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [passengers, setPassengers] = useState([]);
@@ -34,36 +45,40 @@ const TicketFormScreen = () => {
     }
 
     const passengerData = {
-      ...bookingData,
+      busId,
+      busName,
+      busNumber: busNumber || "Not Provided",
+      from,
+      to,
+      time: time || "Not Provided",
+      travelDate,
       seatNumber: selectedSeats[currentIndex],
-      name,
+      userName: name,
       phone,
       age,
       gender,
-      travelDate, // ✅ Ensure travelDate is included
+      price,
+      totalPrice: selectedSeats.length * price,
+      bookingTime: new Date(),
     };
 
     setPassengers([...passengers, passengerData]);
 
     if (currentIndex + 1 < selectedSeats.length) {
-      // Move to next passenger
+      // Move to next passenger form
       setCurrentIndex(currentIndex + 1);
       setName("");
       setPhone("");
       setAge("");
       setGender("Male");
     } else {
-      // All passengers entered — save to Firestore
+      // Final submission
       try {
         for (let passenger of [...passengers, passengerData]) {
-          const passengerWithDate = {
-            ...passenger,
-            travelDate, // ✅ Re-confirm it's added during save
-          };
-          await addDoc(collection(db, "Booking"), passengerWithDate);
+          await addDoc(collection(db, "Booking"), passenger);
         }
         Alert.alert("Success", "Booking confirmed for all passengers!");
-        navigation.navigate("Home"); // or TicketSummary, etc.
+        navigation.navigate("Home");
       } catch (error) {
         console.error("Error saving booking:", error);
         Alert.alert("Error", "Something went wrong while saving booking.");
@@ -110,7 +125,12 @@ const TicketFormScreen = () => {
         <Picker.Item label="Other" value="Other" />
       </Picker>
 
-      <Button title={currentIndex + 1 < selectedSeats.length ? "Next" : "Confirm Booking"} onPress={handleSubmit} />
+      <Button
+        title={
+          currentIndex + 1 < selectedSeats.length ? "Next" : "Confirm Booking"
+        }
+        onPress={handleSubmit}
+      />
     </View>
   );
 };

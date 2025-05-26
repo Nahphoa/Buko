@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+} from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "../firebaseConfig";
@@ -7,38 +13,48 @@ import { db } from "../firebaseConfig";
 const BusListScreen = ({ route }) => {
   const navigation = useNavigation();
   const { from, to, selectedDate } = route.params;
-
   const [buses, setBuses] = useState([]);
 
   useEffect(() => {
     const fetchBuses = async () => {
       try {
-        // Fetch from 'buses' collection (admin-added)
-        const busesQuery = query(
-          collection(db, "buses"),
-          where("source", "==", from),
-          where("destination", "==", to)
-        );
-        const busesSnapshot = await getDocs(busesQuery);
-        const busesData = busesSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+        const normalizeData = (doc, source) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            busName: data.busName || data.busname || "Unnamed Bus",
+            busNumber: data.busNumber || data.BusNo || "N/A",
+            from: source === "manual" ? data.from : data.source,
+            to: source === "manual" ? data.to : data.destination,
+            totalSeats: data.totalSeats || 40,
+            price: data.price || 0,
+            time: data.time || "Not specified",
+            travelDate: data.travelDate || selectedDate,
+          };
+        };
 
-        // Fetch from 'Buses' collection (manually added)
-        const busesAltQuery = query(
-          collection(db, "Buses"),
-          where("from", "==", from),
-          where("to", "==", to)
-        );
-        const busesAltSnapshot = await getDocs(busesAltQuery);
-        const busesAltData = busesAltSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+        const [adminSnap, manualSnap] = await Promise.all([
+          getDocs(
+            query(
+              collection(db, "buses"),
+              where("source", "==", from),
+              where("destination", "==", to)
+            )
+          ),
+          getDocs(
+            query(
+              collection(db, "Buses"),
+              where("from", "==", from),
+              where("to", "==", to)
+            )
+          ),
+        ]);
 
-        // Merge both
-        const allBuses = [...busesData, ...busesAltData];
+        const allBuses = [
+          ...adminSnap.docs.map((doc) => normalizeData(doc, "admin")),
+          ...manualSnap.docs.map((doc) => normalizeData(doc, "manual")),
+        ];
+
         setBuses(allBuses);
       } catch (error) {
         console.error("Error fetching buses:", error.message);
@@ -47,6 +63,22 @@ const BusListScreen = ({ route }) => {
 
     fetchBuses();
   }, [from, to]);
+
+  const renderBusItem = ({ item }) => (
+    <View style={styles.busItem}>
+      <Text>Bus Name: {item.busName}</Text>
+      <Text>Bus No: {item.busNumber}</Text>
+      <Text>Price: ₹{item.price}</Text>
+      <Text>Time: {item.time}</Text>
+
+      <TouchableOpacity
+        style={styles.bookButton}
+        onPress={() => navigation.navigate("Bookyseat", { ...item })}
+      >
+        <Text style={styles.buttonText}>Book Now</Text>
+      </TouchableOpacity>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
@@ -57,36 +89,11 @@ const BusListScreen = ({ route }) => {
       {buses.length > 0 ? (
         <FlatList
           data={buses}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <View style={styles.busItem}>
-              <Text>Bus Name: {item.busname || item.busName}</Text>
-              <Text>Price: ₹{item.price}</Text>
-              <Text>Time: {item.time}</Text>
-              <Text>Bus.No: {item.BusNo || item.busNumber}</Text>
-
-              <TouchableOpacity
-                style={styles.bookButton}
-                onPress={() =>
-                  navigation.navigate("Bookyseat", {
-                    busId: item.id,
-                    busName: item.busname || item.busName,
-                    price: item.price,
-                    totalSeats: Number(item.totalSeats),
-                    BusNo: item.BusNo || item.busNumber,
-                    from: item.from || item.source,
-                    to: item.to || item.destination,
-                    travelDate: item.travelDate || selectedDate,
-                  })
-                }
-              >
-                <Text style={styles.buttonText}>Book Now</Text>
-              </TouchableOpacity>
-            </View>
-          )}
+          keyExtractor={(bus) => bus.id}
+          renderItem={renderBusItem}
         />
       ) : (
-        <Text style={styles.noBusText}>Please select the Routes</Text>
+        <Text style={styles.noBusText}>No buses found for selected route</Text>
       )}
     </View>
   );
@@ -109,6 +116,8 @@ const styles = StyleSheet.create({
     padding: 20,
     borderBottomWidth: 1,
     marginBottom: 10,
+    backgroundColor: "#fff",
+    borderRadius: 10,
   },
   bookButton: {
     backgroundColor: "#003580",

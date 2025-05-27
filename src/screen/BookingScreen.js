@@ -12,7 +12,7 @@ const BookingScreen = () => {
   return (
     <Stack.Navigator>
       <Stack.Screen name="BookingMenu" component={BookingMenu} options={{headerShown:false}}/>
-      <Stack.Screen name="History" component={History}/>
+      <Stack.Screen name="History" component={History} options={{headerShown:true}}/>
       
       
     </Stack.Navigator>

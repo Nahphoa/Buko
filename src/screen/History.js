@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View, FlatList, Alert } from 'react-native';
 import React, { useEffect, useState } from 'react';
-import { db } from '../firebaseConfig';
-import { collection, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { db, auth } from '../firebaseConfig';
+import { collection, getDocs, deleteDoc, doc, updateDoc, query, where } from 'firebase/firestore';
 
 const History = () => {
   const [bookings, setBookings] = useState([]);
@@ -9,11 +9,22 @@ const History = () => {
   useEffect(() => {
     const fetchBookings = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "Booking"));
+        const user = auth.currentUser;
+        if (!user) {
+          // No user logged in
+          setBookings([]);
+          return;
+        }
+
+        // Query bookings where userId matches current user's uid
+        const q = query(collection(db, "Booking"), where("userId", "==", user.uid));
+        const querySnapshot = await getDocs(q);
+
         const fetched = querySnapshot.docs.map(doc => ({
           ticket_id: doc.id,
           ...doc.data()
         }));
+
         setBookings(fetched);
       } catch (error) {
         console.error("Error fetching bookings:", error);
@@ -21,6 +32,8 @@ const History = () => {
     };
 
     fetchBookings();
+
+    // Optionally, you can add a listener for auth state changes or refresh on focus
   }, []);
 
   const handleDelete = (ticketId) => {
@@ -130,6 +143,7 @@ const History = () => {
         data={bookings}
         keyExtractor={(item) => item.ticket_id}
         renderItem={renderItem}
+        ListEmptyComponent={<Text style={{ textAlign: 'center', marginTop: 20 }}>No bookings found.</Text>}
       />
     </View>
   );

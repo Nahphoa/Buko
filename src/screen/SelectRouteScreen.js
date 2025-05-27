@@ -9,13 +9,13 @@ export default function SelectRouteScreen({ navigation, route }) {
   useLayoutEffect(() => {
     navigation.setOptions({
       title: type === "from" ? "Select Source" : "Select Destination",
-      headerStyle: { backgroundColor: '#003580' }, // optional: header color
+      headerStyle: { backgroundColor: '#800080' }, // optional: header color
       headerTintColor: '#fff', // optional: text/icon color
     });
   }, [navigation, type]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#40E0D0', padding: 20 }}>
+    <View style={{ flex: 1, backgroundColor: '#fff', padding: 20 }}>
       <FlatList
         data={routes}
         keyExtractor={(item) => item}

@@ -1,44 +1,39 @@
 import {
-  StyleSheet,Text,TextInput,TouchableOpacity,View,Image,KeyboardAvoidingView, Platform,ScrollView,Alert,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Alert,
 } from 'react-native';
 import React, { useState } from 'react';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { auth } from '../firebaseConfig';
-import {signInWithEmailAndPassword,PhoneAuthProvider,signInWithCredential,
-} from 'firebase/auth';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [verificationCode, setVerificationCode] = useState('');
-  const [verificationId, setVerificationId] = useState(null);
 
   const handleEmailLogin = () => {
     signInWithEmailAndPassword(auth, email, password)
-      .then(() => Alert.alert('Succesfully', 'Login with email!'))
+      .then(() => {
+        Alert.alert('Successfully', 'Login with email!', [
+          {
+            text: 'OK',
+            onPress: () =>
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'Home' }],
+              }),
+          },
+        ]);
+      })
       .catch((error) => Alert.alert('Error', error.message));
-  };
-
-  const sendOTP = async () => {
-    try {
-      const phoneProvider = new PhoneAuthProvider(auth);
-      const verificationId = await phoneProvider.verifyPhoneNumber(phoneNumber, null);
-      setVerificationId(verificationId);
-      Alert.alert('OTP Sent', 'A verification code has been sent to your phone.');
-    } catch (error) {
-      Alert.alert('Error', error.message);
-    }
-  };
-
-  const verifyOTP = async () => {
-    try {
-      const credential = PhoneAuthProvider.credential(verificationId, verificationCode);
-      await signInWithCredential(auth, credential);
-      Alert.alert('Success', 'Logged in with phone!');
-    } catch (error) {
-      Alert.alert('Error', error.message);
-    }
   };
 
   return (
@@ -46,10 +41,7 @@ const LoginScreen = ({ navigation }) => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      <ScrollView
-        contentContainerStyle={styles.innerContainer}
-        keyboardShouldPersistTaps="handled"
-      >
+      <ScrollView contentContainerStyle={styles.innerContainer} keyboardShouldPersistTaps="handled">
         <View style={styles.innerContent}>
           {/* Logo */}
           <Image source={require('../assets/logo.png')} style={styles.logo} />
@@ -117,7 +109,7 @@ export default LoginScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#40E0D0',
+    backgroundColor: '#fff',
   },
   innerContainer: {
     flexGrow: 1,
@@ -129,8 +121,8 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   logo: {
-    width: 100,
-    height: 100,
+    width: 130,
+    height: 190,
     marginBottom: 20,
     resizeMode: 'contain',
   },
@@ -147,7 +139,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
-    borderColor: '#000000',
+    borderColor: '#800080',
     borderWidth: 1,
     borderRadius: 5,
     paddingHorizontal: 10,
@@ -172,7 +164,7 @@ const styles = StyleSheet.create({
   button: {
     width: '100%',
     height: 50,
-    backgroundColor: '#003580',
+    backgroundColor: '#800080',
     borderRadius: 5,
     justifyContent: 'center',
     alignItems: 'center',

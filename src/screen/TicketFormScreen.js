@@ -17,7 +17,6 @@ const TicketFormScreen = () => {
   const route = useRoute();
   const { bookingData } = route.params;
 
-  // Destructure all relevant fields
   const {
     selectedSeats = [],
     travelDate,
@@ -65,20 +64,23 @@ const TicketFormScreen = () => {
     setPassengers([...passengers, passengerData]);
 
     if (currentIndex + 1 < selectedSeats.length) {
-      // Move to next passenger form
       setCurrentIndex(currentIndex + 1);
       setName("");
       setPhone("");
       setAge("");
       setGender("Male");
     } else {
-      // Final submission
       try {
         for (let passenger of [...passengers, passengerData]) {
           await addDoc(collection(db, "Booking"), passenger);
         }
         Alert.alert("Success", "Booking confirmed for all passengers!");
-        navigation.navigate("Home");
+       navigation.navigate('Home', {
+  screen: 'BottomTabs',
+});
+
+
+
       } catch (error) {
         console.error("Error saving booking:", error);
         Alert.alert("Error", "Something went wrong while saving booking.");

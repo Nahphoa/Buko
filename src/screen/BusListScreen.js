@@ -22,6 +22,7 @@ const BusListScreen = ({ route }) => {
           const data = doc.data();
           return {
             id: doc.id,
+            busId: doc.id, // ✅ add this explicitly
             busName: data.busName || data.busname || "Unnamed Bus",
             busNumber: data.busNumber || data.BusNo || "N/A",
             from: source === "manual" ? data.from : data.source,
@@ -73,7 +74,12 @@ const BusListScreen = ({ route }) => {
 
       <TouchableOpacity
         style={styles.bookButton}
-        onPress={() => navigation.navigate("Bookyseat", { ...item })}
+        onPress={() =>
+          navigation.navigate("Bookyseat", {
+            ...item,
+            busId: item.id, // ✅ pass busId explicitly
+          })
+        }
       >
         <Text style={styles.buttonText}>Book Now</Text>
       </TouchableOpacity>
@@ -105,7 +111,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: "#40E0D0",
+    backgroundColor: "#fff",
   },
   title: {
     fontSize: 20,
@@ -120,13 +126,13 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   bookButton: {
-    backgroundColor: "#003580",
+    backgroundColor: "#FF7F50",
     padding: 10,
     marginTop: 10,
     borderRadius: 5,
   },
   buttonText: {
-    color: "#fff",
+    color: "#000000",
     textAlign: "center",
     fontWeight: "bold",
   },

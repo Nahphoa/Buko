@@ -19,9 +19,11 @@ const Bookyseat = ({ route }) => {
     busName,
     price = 0,
     totalSeats,
-    busId,
+    busId = null,   // <-- fix here: default to null
     from,
     to,
+    time,
+    BusNo,
     travelDate,
   } = route.params || {};
 
@@ -51,12 +53,13 @@ const Bookyseat = ({ route }) => {
 
     const bookingData = {
       busName,
-      busId,
+      busId,              // busId will never be undefined now
       from,
       to,
       travelDate,
       price,
-      
+      time: route.params?.time,
+       busNumber: route.params?.BusNo || null,
       selectedSeats,
       totalPrice: selectedSeats.length * price,
     };
@@ -82,12 +85,11 @@ const Bookyseat = ({ route }) => {
     } catch (error) {
       console.error("Booking save failed:", error);
     }
-    
   };
 
   const totalPrice = selectedSeats.length * price;
 
-  //  seat layout
+  // seat layout - unchanged
   const seatRows = [];
   let seatNum = 1;
   while (seatNum <= finalTotalSeats) {
@@ -103,7 +105,9 @@ const Bookyseat = ({ route }) => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{busName}</Text>
-      <Text>{from} ➡️ {to}</Text>
+      <Text>
+        {from} ➡️ {to}
+      </Text>
       <Text>Travel Date: {travelDate}</Text>
 
       <View style={styles.layoutBox}>
@@ -123,7 +127,10 @@ const Bookyseat = ({ route }) => {
               item === "aisle" ? (
                 <View key={index} style={styles.aisleSpace} />
               ) : (
-                <View key={`${busId || "bus"}-${item}`} style={styles.seatWrapper}>
+                <View
+                  key={`${busId || "bus"}-${item}`}
+                  style={styles.seatWrapper}
+                >
                   <TouchableOpacity
                     style={[
                       styles.seat,
@@ -163,7 +170,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 40,
     alignItems: "center",
-    backgroundColor: "#40E0D0",
+    backgroundColor: "#fff",
   },
   title: {
     fontSize: 20,
@@ -172,7 +179,7 @@ const styles = StyleSheet.create({
   },
   layoutBox: {
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: "#800080",
     borderRadius: 8,
     padding: 10,
     marginVertical: 15,
@@ -228,8 +235,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#f2f2f2",
   },
   selectedSeat: {
-    borderColor: "green",
-    backgroundColor: "lightgreen",
+    borderColor: "#FF7F50",
+    backgroundColor: "#FF7F50",
   },
   seatText: {
     fontWeight: "bold",
@@ -242,7 +249,7 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   bookButton: {
-    backgroundColor: "green",
+    backgroundColor: "#800080",
     padding: 10,
     marginTop: 10,
     borderRadius: 5,

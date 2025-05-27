@@ -4,8 +4,9 @@ import {
 } from 'react-native';
 import React, { useState } from 'react';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { auth } from '../firebaseConfig';
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { auth, db } from '../firebaseConfig';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
 
 const SignUpScreen = ({ navigation }) => {
   const [username, setUsername] = useState('');
@@ -13,14 +14,18 @@ const SignUpScreen = ({ navigation }) => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [dob, setDob] = useState('');
   const [gender, setGender] = useState('');
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
 
-  const handleEmailSignUp = () => {
-    if (!username || !email || !phoneNumber || !password || !confirmPassword || !dob || !gender) {
+  const handleEmailSignUp = async () => {
+    if (!username || !email || !phoneNumber || !password || !confirmPassword || !gender) {
       Alert.alert("Error", "Please fill in all fields!");
+      return;
+    }
+
+    if (password.length < 6) {
+      Alert.alert("Error", "Password must be at least 6 characters.");
       return;
     }
 
@@ -29,12 +34,25 @@ const SignUpScreen = ({ navigation }) => {
       return;
     }
 
-    createUserWithEmailAndPassword(auth, email, password)
-      .then(() => {
-        Alert.alert("Success", "Account created successfully!");
-        navigation.navigate('Login');
-      })
-      .catch((error) => Alert.alert("Sign-up Error", error.message));
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const { uid } = userCredential.user;
+
+      await setDoc(doc(db, "users", uid), {
+        uid,
+        username,
+        email,
+        phoneNumber,
+        gender,
+        createdAt: new Date().toISOString()
+      });
+
+      Alert.alert("Success", "Account created successfully!");
+      navigation.navigate('Login');
+    } catch (error) {
+      console.log(error);
+      Alert.alert("Sign-up Error", error.message);
+    }
   };
 
   return (
@@ -43,12 +61,10 @@ const SignUpScreen = ({ navigation }) => {
       style={styles.container}
     >
       <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
-        {/* Logo at the top center */}
         <Image source={require('../assets/logo.png')} style={styles.logo} />
 
-        {/* Headings centered below the logo */}
         <View style={styles.textContainer}>
-          <Text style={styles.headingText}>Please SingnUp first to</Text>
+          <Text style={styles.headingText}>Please Sign Up first to</Text>
           <Text style={[styles.headingText, styles.bukoText]}>Buko</Text>
         </View>
 
@@ -124,18 +140,6 @@ const SignUpScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-        {/* DOB */}
-        <View style={styles.inputContainer}>
-          <Ionicons name="calendar-outline" size={24} color="#000000" style={styles.icon} />
-          <TextInput
-            style={styles.textInput}
-            placeholder="Date of Birth (DD/MM/YYYY)"
-            placeholderTextColor="#000000"
-            value={dob}
-            onChangeText={setDob}
-          />
-        </View>
-
         {/* Gender */}
         <View style={styles.genderContainer}>
           <Text style={styles.genderLabel}>Gender:</Text>
@@ -172,7 +176,7 @@ export default SignUpScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#40E0D0',
+    backgroundColor: '#fff',
   },
   scrollContainer: {
     padding: 20,
@@ -181,7 +185,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logo: {
-    width: 100,
+    width: 180,
     height: 120,
     marginBottom: 10,
   },
@@ -220,7 +224,7 @@ const styles = StyleSheet.create({
   button: {
     width: '100%',
     height: 50,
-    backgroundColor: '#003580',
+    backgroundColor: '#800080',
     borderRadius: 5,
     justifyContent: 'center',
     alignItems: 'center',
@@ -257,7 +261,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
   },
   selectedGender: {
-    backgroundColor: '#003580',
+    backgroundColor: '#800080',
   },
   genderText: {
     color: '#003580',

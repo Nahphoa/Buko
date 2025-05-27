@@ -23,6 +23,7 @@ import AdminLogin from './src/screen/AdminLogin';
 
 
 
+
 const StackNavigator = () => {
   const MyTabs = createBottomTabNavigator();
   const Stack = createNativeStackNavigator();
@@ -34,7 +35,7 @@ const StackNavigator = () => {
           component={HomeScreen} options={{
             tabBarLabel: "Home",
             headerShown: false, tabBarIcon: ({ focused }) => focused ? (
-              <Entypo name="home" size={24} color="#003580" />
+              <Entypo name="home" size={24} color="#800080" />
             ) : (
               <AntDesign name="home" size={24} color="black" />
             )
@@ -46,7 +47,7 @@ const StackNavigator = () => {
             headerShown: false,
              tabBarIcon: ({ focused }) => focused ? (
               <Entypo name="ticket" 
-              size={24} color="#003580" /> 
+              size={24} color="#800080" /> 
             ) : (
               <Ionicons name="ticket-outline" size={24} color="black" />
             )
@@ -60,7 +61,7 @@ const StackNavigator = () => {
       headerShown: false,
       tabBarIcon: ({ focused }) =>
         focused ? (
-          <Ionicons name="person" size={24} color="#003580" />
+          <Ionicons name="person" size={24} color="#800080" />
         ) : (
           <Ionicons name="person-add-outline" size={24} color="black" />
         ),
@@ -75,7 +76,7 @@ const StackNavigator = () => {
     <Stack.Navigator
       screenOptions={{
     headerStyle: {
-      backgroundColor: '#003580', // ✅ Blue header background
+      backgroundColor: '#800080', // ✅  header background
       
     },
     headerTintColor: '#fff', // ✅ White icons/text

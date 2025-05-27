@@ -74,8 +74,8 @@ const styles = StyleSheet.create({
   
   },
   logo: {
-    height: 130,
-    width: 100,
+    height: 180,
+    width: 130,
     marginBottom: 40,
     marginTop: 40,
   },
@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
   searchButton: {
     height: 50,
     width: '100%',
-    backgroundColor: '#003580',
+    backgroundColor: '#800080',
     borderRadius: 5,
     justifyContent: 'center',
     alignItems: 'center',

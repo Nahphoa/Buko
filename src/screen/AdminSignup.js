@@ -14,7 +14,7 @@ import { collection, addDoc } from 'firebase/firestore';
 import { useNavigation } from '@react-navigation/native';
 import { auth, db } from '../firebaseConfig';
 
-export default function AdminSignupScreen({ navigation }) {
+export default function AdminSignup({ navigation }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -79,7 +79,7 @@ export default function AdminSignupScreen({ navigation }) {
         <Text style={styles.buttonText}>Signup</Text>
       </TouchableOpacity>
 
-       <TouchableOpacity onPress={() => navigation.navigate('AdminLogin')}>
+       <TouchableOpacity onPress={() => navigation.navigate('AdminLog')}>
         <Text style={styles.loginLink}>Already have an account? Log In</Text>
       </TouchableOpacity>
     </View>
@@ -90,7 +90,7 @@ export default function AdminSignupScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#40E0D0',
+    backgroundColor: '#fff',
     padding: 20,
     justifyContent: 'center',
   },
@@ -106,11 +106,11 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 12,
     borderRadius: 6,
-    borderColor: '#ccc',
+    borderColor: '#000000',
     borderWidth: 1,
   },
   button: {
-    backgroundColor: '#003580',
+    backgroundColor: '#800080',
     padding: 15,
     borderRadius: 6,
     alignItems: 'center',

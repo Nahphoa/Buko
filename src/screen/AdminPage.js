@@ -17,6 +17,8 @@ import {
   deleteDoc,
   doc,
   onSnapshot,
+  query,
+  where,
 } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -35,6 +37,9 @@ export default function AdminPage({ route }) {
   const [showBusForm, setShowBusForm] = useState(false);
   const [notifications, setNotifications] = useState([]);
 
+  // New state for cancel requests
+  const [cancelRequests, setCancelRequests] = useState([]);
+
   // Fetch buses
   const fetchBuses = async () => {
     const snapshot = await getDocs(collection(db, 'buses'));
@@ -47,9 +52,27 @@ export default function AdminPage({ route }) {
     setBuses(filtered);
   };
 
+  // Fetch cancel requests filtered by route
+  const fetchCancelRequests = () => {
+    const q = query(
+      collection(db, 'CancelRequests'),
+      where('source', '==', adminSource),
+      where('destination', '==', adminDestination),
+      where('status', '==', 'pending')
+    );
+
+    return onSnapshot(q, (snapshot) => {
+      const requests = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setCancelRequests(requests);
+    });
+  };
+
   // Fetch bookings and setup notification listener
   useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, 'Booking'), (snapshot) => {
+    const unsubscribeBookings = onSnapshot(collection(db, 'Booking'), (snapshot) => {
       const updatedBookings = snapshot.docs
         .map((doc) => ({ id: doc.id, ...doc.data() }))
         .filter(
@@ -72,8 +95,12 @@ export default function AdminPage({ route }) {
     });
 
     fetchBuses();
+    const unsubscribeCancelRequests = fetchCancelRequests();
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribeBookings();
+      unsubscribeCancelRequests();
+    };
   }, []);
 
   const clearFields = () => {
@@ -147,6 +174,47 @@ export default function AdminPage({ route }) {
     setEditId(bus.id);
   };
 
+  // New: Approve cancel request
+  const handleApproveCancelRequest = async (request) => {
+    try {
+      // Find booking matching passenger and route info
+      const q = query(
+        collection(db, 'Booking'),
+        where('name', '==', request.passengerName),
+        where('phone', '==', request.phone), // assuming phone stored in booking
+        where('from', '==', adminSource),
+        where('to', '==', adminDestination)
+      );
+      const bookingSnapshot = await getDocs(q);
+
+      // Delete all matching bookings (usually one)
+      bookingSnapshot.forEach(async (docSnap) => {
+        await deleteDoc(doc(db, 'Booking', docSnap.id));
+      });
+
+      // Remove cancel request document
+      await deleteDoc(doc(db, 'CancelRequests', request.id));
+
+      Alert.alert('Success', `Cancelled ticket for ${request.passengerName}`);
+
+      // Remove request from local state
+      setCancelRequests((prev) => prev.filter((r) => r.id !== request.id));
+    } catch (error) {
+      Alert.alert('Error', 'Failed to approve cancel request: ' + error.message);
+    }
+  };
+
+  // New: Reject cancel request (just delete the request)
+  const handleRejectCancelRequest = async (requestId) => {
+    try {
+      await deleteDoc(doc(db, 'CancelRequests', requestId));
+      Alert.alert('Request Rejected');
+      setCancelRequests((prev) => prev.filter((r) => r.id !== requestId));
+    } catch (error) {
+      Alert.alert('Error', 'Failed to reject cancel request: ' + error.message);
+    }
+  };
+
   return (
     <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 100 }}>
       {/* Header */}
@@ -189,133 +257,155 @@ export default function AdminPage({ route }) {
           <TextInput style={styles.input} placeholder="Time (HH:MM AM/PM)" value={time} onChangeText={setTime} />
           <TextInput style={styles.input} placeholder="Price" value={price} keyboardType="numeric" onChangeText={setPrice} />
           <TextInput style={styles.input} placeholder="Total Seats" value={totalSeats} keyboardType="numeric" onChangeText={setTotalSeats} />
-          <TextInput style={styles.input} placeholder="Available Seats" value={seatsAvailable} keyboardType="numeric" onChangeText={setSeatsAvailable} />
+          <TextInput style={styles.input} placeholder="Seats Available" value={seatsAvailable} keyboardType="numeric" onChangeText={setSeatsAvailable} />
 
-          <TouchableOpacity style={styles.button} onPress={handleAddOrUpdate}>
+          <TouchableOpacity style={styles.addBusButton} onPress={handleAddOrUpdate}>
             <Text style={styles.buttonText}>{editId ? 'Update Bus' : 'Add Bus'}</Text>
           </TouchableOpacity>
-
-          <Text style={styles.subtitle}>Bus List</Text>
-          {buses.map((item) => (
-            <View key={item.id} style={styles.busItem}>
-              <Text>{item.busName} ({item.busNumber})</Text>
-              <Text>{item.time} | ₹{item.price} | Seats: {item.seatsAvailable}/{item.totalSeats}</Text>
-              <View style={styles.actions}>
-                <TouchableOpacity onPress={() => handleEdit(item)}><Text style={styles.edit}>Edit</Text></TouchableOpacity>
-                <TouchableOpacity onPress={() => handleDeleteBus(item.id)}><Text style={styles.delete}>Delete</Text></TouchableOpacity>
-              </View>
-            </View>
-          ))}
         </View>
       )}
 
-      {/* User Bookings Section */}
-      <Text style={styles.subtitle}>Passengers</Text>
-      {bookings.length === 0 ? (
-        <Text>Not Bookings Yet For This Route.</Text>
-      ) : (
-        bookings.map((booking) => (
-          <View key={booking.id} style={styles.busItem}>
-            <Text style={{ fontWeight: 'bold' }}>{booking.name} / Seat: {booking.seatNumber}</Text>
-            <Text>Bus: {booking.busName} ({booking.busNumber})</Text>
-             
-
-            <Text>Travel Date: {booking.travelDate}</Text>
-            
-            <TouchableOpacity onPress={() => handleDeleteBooking(booking.id)}>
-              <Text style={{ color: 'red', marginTop: 5 }}>Delete</Text>
+      {/* Bus List */}
+      <Text style={styles.sectionTitle}>Buses:</Text>
+      {buses.length === 0 && <Text>No buses available.</Text>}
+      {buses.map((bus) => (
+        <View key={bus.id} style={styles.listItem}>
+          <Text style={{ fontWeight: 'bold' }}>{bus.busName} ({bus.busNumber})</Text>
+          <Text>Time: {bus.time}</Text>
+          <Text>Price: ₹{bus.price}</Text>
+          <Text>Seats: {bus.seatsAvailable}/{bus.totalSeats}</Text>
+          <View style={styles.row}>
+            <TouchableOpacity onPress={() => handleEdit(bus)}>
+              <Ionicons name="create-outline" size={24} color="blue" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => handleDeleteBus(bus.id)}>
+              <Ionicons name="trash-outline" size={24} color="red" />
             </TouchableOpacity>
           </View>
-        ))
-      )}
+        </View>
+      ))}
+
+      {/* Bookings List */}
+      <Text style={styles.sectionTitle}>User Bookings:</Text>
+      {bookings.length === 0 && <Text>No bookings yet.</Text>}
+      {bookings.map((booking) => (
+        <View key={booking.id} style={styles.listItem}>
+          <Text style={{ fontWeight: 'bold' }}>{booking.busName || booking.busNumber}</Text>
+          <Text>Passenger: {booking.name}</Text>
+          <Text>Seat: {booking.seat}</Text>
+          <Text>Date: {booking.date}</Text>
+          <Text>Time: {booking.time}</Text>
+          <TouchableOpacity onPress={() => handleDeleteBooking(booking.id)}>
+            <Ionicons name="trash-outline" size={24} color="red" />
+          </TouchableOpacity>
+        </View>
+      ))}
+
+      {/* Cancel Ticket Requests */}
+      <Text style={styles.sectionTitle}>Cancel Ticket Requests:</Text>
+      {cancelRequests.length === 0 && <Text>No cancel requests.</Text>}
+      {cancelRequests.map((request) => (
+        <View key={request.id} style={styles.cancelRequestItem}>
+          <Text style={{ fontWeight: 'bold' }}>Passenger: {request.passengerName}</Text>
+          <Text>Phone: {request.phone}</Text>
+          <View style={styles.row}>
+            <TouchableOpacity
+              style={[styles.approveButton]}
+              onPress={() => handleApproveCancelRequest(request)}
+            >
+              <Text style={{ color: 'white' }}>Approve</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.rejectButton]}
+              onPress={() => handleRejectCancelRequest(request.id)}
+            >
+              <Text style={{ color: 'white' }}>Reject</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ))}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: 'darkblue',
-  },
-  input: {
-    backgroundColor: '#fff',
-    padding: 10,
-    marginBottom: 10,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#000000',
-  },
-  button: {
-    backgroundColor: '#0066cc',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginVertical: 10,
-  },
-  addBusButton: {
-    backgroundColor: '#28a745',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  buttonText: {
-    color: '#000000',
-    fontWeight: 'bold',
-  },
-  subtitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginTop: 20,
-    marginBottom: 10,
-  },
-  busItem: {
-    backgroundColor: '#f0f0f0',
-    padding: 12,
-    marginBottom: 10,
-    borderRadius: 6,
-  },
-  actions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 5,
-  },
-  edit: {
-    color: 'green',
-  },
-  delete: {
-    color: 'red',
-  },
-  notificationBox: {
-    backgroundColor: '#ffefc2',
-    padding: 10,
-    borderRadius: 6,
-    marginBottom: 10,
-  },
-  okButton: {
-    backgroundColor: '#28a745',
-    marginTop: 10,
-    alignSelf: 'flex-end',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 4,
-  },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
+  title: { fontWeight: 'bold', fontSize: 18 },
   notificationBadge: {
     backgroundColor: 'red',
+    borderRadius: 10,
+    paddingHorizontal: 5,
     position: 'absolute',
     right: -6,
     top: -4,
-    borderRadius: 10,
-    width: 18,
-    height: 18,
-    justifyContent: 'center',
+  },
+  notificationBox: {
+    backgroundColor: '#e7f3fe',
+    padding: 10,
+    marginVertical: 10,
+    borderRadius: 6,
+  },
+  okButton: {
+    backgroundColor: 'green',
+    padding: 6,
+    borderRadius: 5,
+    marginTop: 8,
+    alignSelf: 'flex-start',
+  },
+  addBusButton: {
+    backgroundColor: '#007AFF',
+    padding: 10,
+    marginVertical: 10,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  buttonText: { color: 'white', fontWeight: 'bold' },
+  input: {
+    borderWidth: 1,
+    borderColor: '#999',
+    borderRadius: 6,
+    padding: 8,
+    marginVertical: 6,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginTop: 15,
+    marginBottom: 6,
+  },
+  listItem: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    padding: 10,
+    marginVertical: 5,
+    borderRadius: 6,
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 6,
+  },
+  cancelRequestItem: {
+    borderWidth: 1,
+    borderColor: '#ff6666',
+    backgroundColor: '#ffe6e6',
+    padding: 10,
+    marginVertical: 5,
+    borderRadius: 6,
+  },
+  approveButton: {
+    backgroundColor: 'green',
+    padding: 8,
+    borderRadius: 6,
+    flex: 1,
+    marginRight: 8,
+    alignItems: 'center',
+  },
+  rejectButton: {
+    backgroundColor: 'red',
+    padding: 8,
+    borderRadius: 6,
+    flex: 1,
     alignItems: 'center',
   },
 });

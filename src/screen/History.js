@@ -138,7 +138,7 @@ const History = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Booking History</Text>
+      
       <FlatList
         data={bookings}
         keyExtractor={(item) => item.ticket_id}

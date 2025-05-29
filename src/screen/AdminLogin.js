@@ -8,8 +8,10 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
-import { db } from '../firebaseConfig';
+import { auth, db } from '../firebaseConfig';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { collection, getDocs, query, where } from 'firebase/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function AdminLogin({ navigation }) {
   const [email, setEmail] = useState('');
@@ -25,11 +27,15 @@ export default function AdminLogin({ navigation }) {
     }
 
     try {
+      // Step 1: Authenticate using Firebase Auth
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Step 2: Query Firestore for the admin profile
       const adminRef = collection(db, 'admins');
       const q = query(
         adminRef,
-        where('email', '==', email),
-        where('password', '==', password), // ⚠️ Use hashed password in production!
+        where('uid', '==', user.uid), // use UID to match exact user
         where('source', '==', source),
         where('destination', '==', destination),
         where('adminKey', '==', adminKey)
@@ -38,19 +44,32 @@ export default function AdminLogin({ navigation }) {
       const snapshot = await getDocs(q);
 
       if (snapshot.empty) {
-        Alert.alert('Login Failed', 'No admin found with these credentials');
-      } else {
-        const adminDoc = snapshot.docs[0].data();
-
-        Alert.alert('Success', 'Login successful!');
-
-        navigation.navigate('AdminPage', {
-          source: adminDoc.source,
-          destination: adminDoc.destination,
-        });
+        Alert.alert('Login Failed', 'No admin profile found with matching route and key');
+        return;
       }
+
+      const adminDoc = snapshot.docs[0].data();
+
+      // Step 3: Save admin session
+      await AsyncStorage.setItem('keepAdminLoggedIn', 'true');
+      await AsyncStorage.removeItem('keepLoggedIn');
+
+      Alert.alert('Success', 'Login successful!');
+
+      navigation.reset({
+        index: 0,
+        routes: [
+          {
+            name: 'AdminPage',
+            params: {
+              source: adminDoc.source,
+              destination: adminDoc.destination,
+            },
+          },
+        ],
+      });
     } catch (error) {
-      Alert.alert('Error', error.message);
+      Alert.alert('Login Error', error.message);
     }
   };
 
@@ -96,7 +115,7 @@ export default function AdminLogin({ navigation }) {
         <Text style={styles.loginText}>Log In</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => navigation.navigate('AdminSignup')}>
+      <TouchableOpacity onPress={() => navigation.navigate('AdminSign')}>
         <Text style={styles.signupLink}>Don't have an account? Sign Up</Text>
       </TouchableOpacity>
     </ScrollView>
@@ -106,7 +125,7 @@ export default function AdminLogin({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     padding: 20,
-    backgroundColor: '#4de2c3',
+    backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
     flexGrow: 1,
@@ -127,7 +146,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   loginBtn: {
-    backgroundColor: '#003366',
+    backgroundColor: '#800080',
     padding: 14,
     borderRadius: 8,
     width: '100%',

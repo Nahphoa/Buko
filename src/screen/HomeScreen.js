@@ -28,7 +28,7 @@ const HomeScreen = ({ navigation, route }) => {
   return (
     <SafeAreaView style={styles.container}>
       
-      <Image source={require("../assets/logo.png")} style={styles.logo} />
+      <Image source={require("../Image/logo.png")} style={styles.logo} />
 
       {/* FROM FIELD */}
       <TouchableOpacity 

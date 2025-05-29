@@ -1,21 +1,31 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, Image, TouchableOpacity, Alert, Modal, FlatList,
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  Alert,
+  Modal,
+  FlatList,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth } from '../firebaseConfig';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const avatars = [
-  require('../assets/avatars/avatar1.png'),
-  require('../assets/avatars/avatar2.png'),
-  require('../assets/avatars/avatar3.png'),
+  require('../Image/avatars/avatar1.png'),
+  require('../Image/avatars/avatar2.png'),
+  require('../Image/avatars/avatar3.png'),
 ];
 
 export default function ProfileMenu({ navigation }) {
   const [imageBase64, setImageBase64] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [userName, setUserName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const user = auth.currentUser;
   const db = getFirestore();
 
@@ -25,13 +35,15 @@ export default function ProfileMenu({ navigation }) {
 
   useEffect(() => {
     if (user) {
-      // Try to get displayName from auth
+      setEmail(user.email || '');
+      setPhone(user.phoneNumber || '');
+
       if (user.displayName) {
         setUserName(user.displayName);
       } else {
-        // Fallback: get name from Firestore user doc if exists
         fetchUserNameFromFirestore();
       }
+
       fetchProfileImage();
     }
   }, []);
@@ -99,10 +111,25 @@ export default function ProfileMenu({ navigation }) {
 
   const saveProfileImage = async (base64string) => {
     try {
-      await setDoc(doc(db, 'users', user.uid), { profileImage: base64string }, { merge: true });
+      await setDoc(
+        doc(db, 'users', user.uid),
+        { profileImage: base64string },
+        { merge: true }
+      );
       setImageBase64(base64string);
     } catch (err) {
       Alert.alert('Upload error', err.message);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+      await AsyncStorage.removeItem('keepLoggedIn');
+      navigation.replace('LoginScreen');
+    } catch (error) {
+      console.error("Logout error:", error);
+      Alert.alert("Logout Failed", error.message);
     }
   };
 
@@ -111,30 +138,41 @@ export default function ProfileMenu({ navigation }) {
       <Text style={styles.heading}>Welcome to Buko</Text>
 
       <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.profileContainer}>
-        {imageBase64 ? (
-          <Image
-            source={{ uri: `data:image/jpeg;base64,${imageBase64}` }}
-            style={styles.image}
-          />
-        ) : (
-          <Image
-            source={randomDefaultAvatar}
-            style={styles.image}
-          />
-        )}
-        <Text style={styles.userName}>{userName || 'User'}</Text>
+        <Image
+          source={
+            imageBase64
+              ? { uri: `data:image/jpeg;base64,${imageBase64}` }
+              : randomDefaultAvatar
+          }
+          style={styles.image}
+        />
+        <View style={styles.infoContainer}>
+          <Text style={styles.infoLabel}>Name:</Text>
+          <Text style={styles.infoText}>{userName || 'Not set'}</Text>
+
+          <Text style={styles.infoLabel}>Email:</Text>
+          <Text style={styles.infoText}>{email || 'Not available'}</Text>
+
+          <Text style={styles.infoLabel}>Phone:</Text>
+          <Text style={styles.infoText}>{phone || 'Not available'}</Text>
+        </View>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => navigation.navigate('LoginScreen')} style={styles.button}>
-        <Text style={{ color: '	#000080' }}>Login</Text>
+      <TouchableOpacity onPress={() => navigation.navigate('Login')} style={styles.button}>
+        <Text style={styles.buttonText}>Login</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => navigation.navigate('Signup')} style={styles.button}>
-        <Text style={{ color: '	#000080' }}>SignUp</Text>
+      <TouchableOpacity onPress={() => navigation.navigate('SignUpScreen')} style={styles.button}>
+        <Text style={styles.buttonText}>Sign Up</Text>
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => navigation.navigate('AdminMenu')} style={styles.button}>
-        <Text style={{ color: '		#0000FF' }}>Admin Panel</Text>
+        <Text style={styles.buttonText}>Admin Panel</Text>
+      </TouchableOpacity>
+
+      {/* Logout button */}
+      <TouchableOpacity onPress={handleLogout} style={[styles.button, { borderColor: 'red' }]}>
+        <Text style={[styles.buttonText, { color: 'red' }]}>Logout</Text>
       </TouchableOpacity>
 
       <Modal visible={modalVisible} transparent animationType="slide">
@@ -172,42 +210,48 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 20,
+    color: '#003580',
   },
   profileContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 50, 
+    marginBottom: 30,
+    paddingHorizontal: 20,
   },
   image: {
-    width: 120,
-    height: 120,
-    borderRadius: 40,
+    width: 100,
+    height: 100,
+    borderRadius: 60,
     borderWidth: 2,
     borderColor: '#003580',
+    marginRight: 20,
   },
-  userName: {
-    marginLeft: 15,
-    fontSize: 22,
+  infoContainer: {
+    flex: 1,
+  },
+  infoLabel: {
+    fontSize: 14,
     fontWeight: '600',
     color: '#003580',
   },
-  changeText: {
-    marginTop: 8,
-    color: '#003580',
-    textDecorationLine: 'underline',
-    textAlign: 'center',
+  infoText: {
+    fontSize: 14,
+    marginBottom: 6,
+    color: '#000',
   },
   button: {
-  borderWidth: 2,
-  borderRadius: 10,
-  paddingVertical: 10,
-  width: 200,
-  marginTop: 20,
-  borderColor: '#000000',
-  alignItems: 'center',
-},
-
-  
+    borderWidth: 2,
+    borderRadius: 10,
+    paddingVertical: 10,
+    width: 200,
+    marginTop: 20,
+    borderColor: '#000',
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#000080',
+    fontSize: 16,
+  },
   modalContainer: {
     flex: 1,
     justifyContent: 'flex-end',

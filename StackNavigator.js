@@ -1,119 +1,63 @@
-import { StyleSheet, Text, View } from 'react-native'
-import React from 'react'
+// App.js or StackNavigator.js
 
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import HomeScreen from "./src/screen/HomeScreen";
-import BookingScreen from "./src/screen/BookingScreen";
-import ProfileScreen from "./src/screen/ProfileScreen";
-import AntDesign from '@expo/vector-icons/AntDesign';
-import Entypo from '@expo/vector-icons/Entypo';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import SelectRouteScreen from './src/screen/SelectRouteScreen';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import HomeScreen from './src/screen/HomeScreen';
+import MainTab from './MainTab';
 import LoginScreen from './src/screen/LoginScreen';
 import SignUpScreen from './src/screen/SignUpScreen';
+import ForgotPasswordScreen from './src/screen/ForgotPasswordScreen';
+import SelectRouteScreen from './src/screen/SelectRouteScreen';
 import BusListScreen from './src/screen/BusListScreen';
 import Bookyseat from './src/screen/Bookyseat';
-import ProfileMenu from './src/screen/ProfileMenu';
-import ForgotPasswordScreen from './src/screen/ForgotPasswordScreen';
 import TicketFormScreen from './src/screen/TicketFormScreen';
-import AdminMenu from './src/screen/AdminMenu';
+import AdminSignup from './src/screen/AdminSignup';
 import AdminLogin from './src/screen/AdminLogin';
+import History from './src/screen/History';
+import CancelTicketRequestScreen from './src/screen/CancelTicketRequestScreen.js';
+import AboutUs from './src/screen/AboutUs';
+import UpdateTicket from './src/screen/UpdateTicket';
+import AdminPage from './src/screen/AdminPage'; // ✅ Add this at the top
+// import AuthLoading from './AuthLoading';
 
-
-
+const Stack = createNativeStackNavigator();
 
 const StackNavigator = () => {
-  const MyTabs = createBottomTabNavigator();
-  const Stack = createNativeStackNavigator();
-
-  function BottomTabs() {
-    return (
-      <MyTabs.Navigator>
-        <MyTabs.Screen name="Home"
-          component={HomeScreen} options={{
-            tabBarLabel: "Home",
-            headerShown: false, tabBarIcon: ({ focused }) => focused ? (
-              <Entypo name="home" size={24} color="#800080" />
-            ) : (
-              <AntDesign name="home" size={24} color="black" />
-            )
-          }}
-        />
-         <MyTabs.Screen name="Bookings"
-          component={BookingScreen} options={{
-            tabBarLabel: "Bookings",
-            headerShown: false,
-             tabBarIcon: ({ focused }) => focused ? (
-              <Entypo name="ticket" 
-              size={24} color="#800080" /> 
-            ) : (
-              <Ionicons name="ticket-outline" size={24} color="black" />
-            )
-          }}
-        />
- <MyTabs.Screen
-    name="Profile"
-    component={ProfileScreen}
-    options={{
-      tabBarLabel: 'Profile', 
-      headerShown: false,
-      tabBarIcon: ({ focused }) =>
-        focused ? (
-          <Ionicons name="person" size={24} color="#800080" />
-        ) : (
-          <Ionicons name="person-add-outline" size={24} color="black" />
-        ),
-    }}
-  />
-       
-      </MyTabs.Navigator>
-    )
-  }
   return (
     <NavigationContainer>
-    <Stack.Navigator
-      screenOptions={{
-    headerStyle: {
-      backgroundColor: '#800080', // ✅  header background
-      
-    },
-    headerTintColor: '#fff', // ✅ White icons/text
-    headerTitleStyle: {
-      fontWeight: 'bold',
-    },
-    headerShadowVisible: false, // optional
-  }}
->
-    
-     
- <Stack.Screen name="Main" component={BottomTabs} option={{headerShown:false}}/>
+      <Stack.Navigator
+        screenOptions={{
+          headerStyle: { backgroundColor: '#800080' },
+          headerTintColor: '#fff',
+          headerTitleStyle: { fontWeight: 'bold' },
+        }}
+      >
+        {/* Bottom Tabs with Home, Booking, Profile */}
+        <Stack.Screen name="MainTab" component={MainTab} options={{ headerShown: true,  title:'Main' }} />
 
-      <Stack.Screen name="Home" component={HomeScreen}/>
-      <Stack.Screen name="SelectRoute" component={SelectRouteScreen} />
-      
-      <Stack.Screen name ="SignUp" component={SignUpScreen} />
-      
-      <Stack.Screen name ="ForgotPassword" component={ForgotPasswordScreen} />
+        {/* All other screens — NO bottom tabs */}
+        <Stack.Screen name="Home" component={HomeScreen}/>
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="SignUp" component={SignUpScreen}  />
+        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+        <Stack.Screen name="SelectRoute" component={SelectRouteScreen} />
 
-      <Stack.Screen name ="BusList" component={BusListScreen}/>
-      <Stack.Screen name ="Bookyseat" component={Bookyseat}/>
-      <Stack.Screen name ="Booking" component={BookingScreen} option ={{headerShown:false}} />
-      <Stack.Screen name="TicketForm" component={TicketFormScreen}/>
-      <Stack.Screen name ="Login" component={LoginScreen}/>
-      <Stack.Screen name="AdminLogin" component={AdminLogin}/>
-      
-     
-  
-       
+        <Stack.Screen name="BusList" component={BusListScreen} />
+        <Stack.Screen name="Bookyseat" component={Bookyseat} />
+        <Stack.Screen name="TicketForm" component={TicketFormScreen} />
+        <Stack.Screen name="AdminLog" component={AdminLogin} />
+        <Stack.Screen name="AdminPage" component={AdminPage} />
 
-    </Stack.Navigator>
+         <Stack.Screen name="AdminSign" component={AdminSignup}/>
+         <Stack.Screen name="Histo" component={History} options={{title:'Booking History'}} />
+        <Stack.Screen name="CancelTicket" component={CancelTicketRequestScreen}/>
+         <Stack.Screen name="AboutUs" component={AboutUs} />
+         <Stack.Screen name="UpdateTicket" component={UpdateTicket} />
+
+      </Stack.Navigator>
     </NavigationContainer>
+  );
+};
 
-  )
-}
-
-export default StackNavigator
-
-const styles = StyleSheet.create({})
+export default StackNavigator;

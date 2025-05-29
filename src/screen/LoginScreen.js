@@ -14,26 +14,34 @@ import React, { useState } from 'react';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { auth } from '../firebaseConfig';
 import { signInWithEmailAndPassword } from 'firebase/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
-  const handleEmailLogin = () => {
-    signInWithEmailAndPassword(auth, email, password)
-      .then(() => {
-        Alert.alert('Successfully', 'Login with email!', [
-          {
-            text: 'OK',
-            onPress: () =>
-              navigation.reset({
-                index: 0,
-                routes: [{ name: 'Home' }],
-              }),
+  const handleEmailLogin = async () => {
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+
+      await AsyncStorage.setItem('keepLoggedIn', 'true');
+      await AsyncStorage.removeItem('keepAdminLoggedIn');
+
+      Alert.alert('Success', 'Logged in successfully!', [
+        {
+          text: 'OK',
+          onPress: () => {
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'MainTab' }], // Make sure "MainTab" matches your Stack.Navigator
+            });
           },
-        ]);
-      })
-      .catch((error) => Alert.alert('Error', error.message));
+        },
+      ]);
+    } catch (error) {
+      Alert.alert('Login Failed', error.message);
+    }
   };
 
   return (
@@ -43,17 +51,13 @@ const LoginScreen = ({ navigation }) => {
     >
       <ScrollView contentContainerStyle={styles.innerContainer} keyboardShouldPersistTaps="handled">
         <View style={styles.innerContent}>
-          {/* Logo */}
-          <Image source={require('../assets/logo.png')} style={styles.logo} />
-
-          {/* Welcome Text */}
+          <Image source={require('../Image/logo.png')} style={styles.logo} />
           <View style={styles.textContainer}>
             <Text style={styles.headingText}>Hello,</Text>
             <Text style={styles.headingText}>Welcome to</Text>
             <Text style={styles.headingText}>Buko</Text>
           </View>
 
-          {/* Email Input */}
           <View style={styles.inputContainer}>
             <Ionicons name="mail-outline" size={24} color="#003580" style={styles.icon} />
             <TextInput
@@ -67,21 +71,22 @@ const LoginScreen = ({ navigation }) => {
             />
           </View>
 
-          {/* Password Input */}
           <View style={styles.inputContainer}>
             <Ionicons name="lock-closed-outline" size={24} color="#003580" style={styles.icon} />
             <TextInput
               style={styles.textInput}
               placeholder="Enter your password"
               placeholderTextColor="#000000"
-              secureTextEntry
+              secureTextEntry={!showPassword}
               autoCapitalize="none"
               value={password}
               onChangeText={setPassword}
             />
+            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+              <Ionicons name={showPassword ? 'eye' : 'eye-off'} size={24} color="#003580" />
+            </TouchableOpacity>
           </View>
 
-          {/* Forgot Password Link */}
           <TouchableOpacity
             onPress={() => navigation.navigate('ForgotPassword')}
             style={styles.forgotPasswordContainer}
@@ -89,12 +94,10 @@ const LoginScreen = ({ navigation }) => {
             <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
 
-          {/* Login Button */}
           <TouchableOpacity style={styles.button} onPress={handleEmailLogin}>
             <Text style={styles.buttonText}>Login</Text>
           </TouchableOpacity>
 
-          {/* Sign Up Link */}
           <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
             <Text style={styles.signUpText}>Don't have an account? Sign Up</Text>
           </TouchableOpacity>
@@ -105,7 +108,6 @@ const LoginScreen = ({ navigation }) => {
 };
 
 export default LoginScreen;
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -118,39 +120,41 @@ const styles = StyleSheet.create({
   },
   innerContent: {
     alignItems: 'center',
-    width: '100%',
+    justifyContent: 'center',
   },
   logo: {
-    width: 130,
-    height: 190,
-    marginBottom: 20,
+    width: 120,
+    height: 120,
     resizeMode: 'contain',
+    marginBottom: 20,
   },
   textContainer: {
     marginBottom: 30,
     alignItems: 'center',
   },
   headingText: {
-    fontSize: 32,
+    fontSize: 26,
+    fontWeight: 'bold',
     color: '#003580',
-    fontFamily: 'sans-serif-medium',
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    width: '100%',
-    borderColor: '#800080',
     borderWidth: 1,
-    borderRadius: 5,
+    borderColor: '#ccc',
     paddingHorizontal: 10,
-    marginBottom: 15,
+    paddingVertical: 12,
+    borderRadius: 10,
+    marginBottom: 20,
+    width: '100%',
+    backgroundColor: '#f9f9f9',
   },
   icon: {
-    marginRight: 10,
+    marginRight: 8,
   },
   textInput: {
     flex: 1,
-    height: 50,
+    fontSize: 16,
     color: '#000',
   },
   forgotPasswordContainer: {
@@ -159,16 +163,16 @@ const styles = StyleSheet.create({
   },
   forgotPasswordText: {
     color: '#003580',
-    textDecorationLine: 'underline',
+    fontWeight: 'bold',
   },
   button: {
-    width: '100%',
-    height: 50,
     backgroundColor: '#800080',
-    borderRadius: 5,
-    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    width: '100%',
     alignItems: 'center',
-    marginTop: 20,
+    marginBottom: 20,
   },
   buttonText: {
     color: '#fff',
@@ -176,8 +180,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   signUpText: {
-    marginTop: 15,
     color: '#003580',
-    textDecorationLine: 'underline',
+    fontSize: 16,
+    marginTop: 10,
+    fontWeight: '500',
   },
 });

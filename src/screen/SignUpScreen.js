@@ -1,10 +1,12 @@
+import React, { useState } from 'react';
 import {
   StyleSheet, Text, TextInput, TouchableOpacity, View, Image,
   KeyboardAvoidingView, Platform, Alert, ScrollView
 } from 'react-native';
-import React, { useState } from 'react';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { auth, db } from '../firebaseConfig';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+import { auth, db } from '../firebaseConfig'; // your firebase config here
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 
@@ -47,8 +49,17 @@ const SignUpScreen = ({ navigation }) => {
         createdAt: new Date().toISOString()
       });
 
+      // Persist login
+      await AsyncStorage.setItem("keepLoggedIn", "true");
+      await AsyncStorage.setItem("currentUserUid", uid);
+
       Alert.alert("Success", "Account created successfully!");
-      navigation.navigate('Login');
+
+      // Navigate to home screen after signup
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Home' }],
+      });
     } catch (error) {
       console.log(error);
       Alert.alert("Sign-up Error", error.message);
@@ -61,7 +72,7 @@ const SignUpScreen = ({ navigation }) => {
       style={styles.container}
     >
       <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
-        <Image source={require('../assets/logo.png')} style={styles.logo} />
+        <Image source={require('../Image/logo.png')} style={styles.logo} />
 
         <View style={styles.textContainer}>
           <Text style={styles.headingText}>Please Sign Up first to</Text>

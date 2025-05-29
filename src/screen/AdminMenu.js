@@ -7,14 +7,14 @@ export default function AdminMenu({ navigation }) {
       <Text style={styles.heading}>Admin Access</Text>
 
       <TouchableOpacity 
-        onPress={() => navigation.navigate('AdminLogin')}
-        style={[styles.button, { borderColor: 'blue' }]}
+        onPress={() => navigation.navigate('AdminLog')}
+        style={[styles.button, { borderColor: 'orange' }]}
       >
         <Text style={[styles.buttonText, { color: 'blue' }]}>Admin Login</Text>
       </TouchableOpacity>
 
       <TouchableOpacity 
-        onPress={() => navigation.navigate('AdminSignup')}
+        onPress={() => navigation.navigate('AdminSign')}
         style={[styles.button, { borderColor: 'green' }]}
       >
         <Text style={[styles.buttonText, { color: 'green' }]}>Admin SignUp</Text>

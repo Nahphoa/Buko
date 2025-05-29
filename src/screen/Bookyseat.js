@@ -1,3 +1,4 @@
+// Bookyseat.js
 import React, { useState } from "react";
 import {
   View,
@@ -19,7 +20,7 @@ const Bookyseat = ({ route }) => {
     busName,
     price = 0,
     totalSeats,
-    busId = null,   // <-- fix here: default to null
+    busId = null,
     from,
     to,
     time,
@@ -51,37 +52,35 @@ const Bookyseat = ({ route }) => {
       return;
     }
 
+    const user = auth.currentUser;
+
     const bookingData = {
       busName,
-      busId,              // busId will never be undefined now
+      busId,
       from,
       to,
       travelDate,
       price,
-      time: route.params?.time,
-       busNumber: route.params?.BusNo || null,
+      time,
+      busNumber: BusNo || null,
       selectedSeats,
       totalPrice: selectedSeats.length * price,
+      userId: user?.uid || "guest",
+      createdAt: serverTimestamp(),
+      status: "confirmed",
     };
 
-    const user = auth.currentUser;
-
-    if (!user) {
-      navigation.navigate("SignUp", {
-        redirectTo: "TicketForm",
-        bookingData,
-      });
-    } else {
-      navigation.navigate("TicketForm", { bookingData });
-    }
-
-    /* Save to Firestore */
     try {
-      await addDoc(collection(db, "bookings"), {
-        ...bookingData,
-        userId: user?.uid || "guest",
-        createdAt: serverTimestamp(),
-      });
+      await addDoc(collection(db, "Booking"), bookingData);
+
+      if (!user) {
+        navigation.navigate("SignUp", {
+          redirectTo: "TicketForm",
+          bookingData,
+        });
+      } else {
+        navigation.navigate("TicketForm", { bookingData });
+      }
     } catch (error) {
       console.error("Booking save failed:", error);
     }
@@ -89,7 +88,6 @@ const Bookyseat = ({ route }) => {
 
   const totalPrice = selectedSeats.length * price;
 
-  // seat layout - unchanged
   const seatRows = [];
   let seatNum = 1;
   while (seatNum <= finalTotalSeats) {
@@ -105,9 +103,7 @@ const Bookyseat = ({ route }) => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{busName}</Text>
-      <Text>
-        {from} ➡️ {to}
-      </Text>
+      <Text>{from} ➞ {to}</Text>
       <Text>Travel Date: {travelDate}</Text>
 
       <View style={styles.layoutBox}>
@@ -115,7 +111,7 @@ const Bookyseat = ({ route }) => {
           <View style={styles.lowerLabelContainer}>
             <Text style={styles.layoutLabel}>Lower</Text>
             <Image
-              source={require("../assets/steering.jpg")}
+              source={require("../Image/steering.jpg")}
               style={styles.steeringIcon}
             />
           </View>

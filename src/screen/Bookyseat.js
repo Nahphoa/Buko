@@ -1,5 +1,4 @@
-// Bookyseat.js
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,10 +6,11 @@ import {
   StyleSheet,
   Image,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { auth } from "../firebaseConfig";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, query, where, getDocs, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 
 const Bookyseat = ({ route }) => {
@@ -19,7 +19,7 @@ const Bookyseat = ({ route }) => {
   const {
     busName,
     price = 0,
-    totalSeats,
+    totalSeats = 35,
     busId = null,
     from,
     to,
@@ -28,27 +28,65 @@ const Bookyseat = ({ route }) => {
     travelDate,
   } = route.params || {};
 
-  const parsedTotalSeats = parseInt(totalSeats, 10);
-  const finalTotalSeats =
-    Number.isFinite(parsedTotalSeats) && parsedTotalSeats > 0
-      ? parsedTotalSeats
-      : 40;
-
-  const reservedSeats = [];
+  const [reservedSeats, setReservedSeats] = useState([]);
   const [selectedSeats, setSelectedSeats] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Load reserved seats for this busId + travelDate + time from Firestore bookings
+  useEffect(() => {
+    const fetchReservedSeats = async () => {
+      try {
+        if (!busId || !travelDate || !time) {
+          setReservedSeats([]);
+          setLoading(false);
+          return;
+        }
+
+        // Query bookings where busId, travelDate and time match, and status is confirmed
+        const bookingsRef = collection(db, "Booking");
+        const q = query(
+          bookingsRef,
+          where("busId", "==", busId),
+          where("travelDate", "==", travelDate),
+          where("time", "==", time),
+          where("status", "==", "confirmed")
+        );
+
+        const querySnapshot = await getDocs(q);
+        let bookedSeats = [];
+
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          if (data.selectedSeats && Array.isArray(data.selectedSeats)) {
+            bookedSeats = bookedSeats.concat(data.selectedSeats);
+          }
+        });
+
+        // Remove duplicates and sort
+        const uniqueSeats = [...new Set(bookedSeats)];
+        setReservedSeats(uniqueSeats);
+      } catch (error) {
+        console.error("Error fetching reserved seats:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReservedSeats();
+  }, [busId, travelDate, time]);
 
   const toggleSeatSelection = (seatNumber) => {
     if (reservedSeats.includes(seatNumber)) return;
-    setSelectedSeats((prevSeats) =>
-      prevSeats.includes(seatNumber)
-        ? prevSeats.filter((seat) => seat !== seatNumber)
-        : [...prevSeats, seatNumber]
+    setSelectedSeats((prev) =>
+      prev.includes(seatNumber)
+        ? prev.filter((seat) => seat !== seatNumber)
+        : [...prev, seatNumber]
     );
   };
 
   const handleBookNow = async () => {
     if (selectedSeats.length === 0) {
-      Alert.alert("No Seats Selected", "Please select at least one seat before booking.");
+      Alert.alert("No Seats Selected", "Please select at least one seat.");
       return;
     }
 
@@ -73,6 +111,8 @@ const Bookyseat = ({ route }) => {
     try {
       await addDoc(collection(db, "Booking"), bookingData);
 
+      Alert.alert("Booking Confirmed", "Your seats have been booked!");
+
       if (!user) {
         navigation.navigate("SignUp", {
           redirectTo: "TicketForm",
@@ -83,27 +123,82 @@ const Bookyseat = ({ route }) => {
       }
     } catch (error) {
       console.error("Booking save failed:", error);
+      Alert.alert("Booking Failed", "Please try again.");
     }
   };
 
-  const totalPrice = selectedSeats.length * price;
+  const renderSeat = (seatNumber) => {
+    const isReserved = reservedSeats.includes(seatNumber);
+    const isSelected = selectedSeats.includes(seatNumber);
 
-  const seatRows = [];
-  let seatNum = 1;
-  while (seatNum <= finalTotalSeats) {
-    const row = [];
-    if (seatNum <= parsedTotalSeats) row.push(seatNum++);
-    if (seatNum <= parsedTotalSeats) row.push(seatNum++);
-    row.push("aisle");
-    if (seatNum <= parsedTotalSeats) row.push(seatNum++);
-    if (seatNum <= parsedTotalSeats) row.push(seatNum++);
-    seatRows.push(row);
+    return (
+      <TouchableOpacity
+        key={seatNumber}
+        style={[
+          styles.seat,
+          isReserved
+            ? styles.soldSeat
+            : isSelected
+            ? styles.selectedSeat
+            : styles.availableSeat,
+        ]}
+        onPress={() => toggleSeatSelection(seatNumber)}
+        disabled={isReserved}
+      >
+        <Text style={styles.seatText}>{isReserved ? "X" : seatNumber}</Text>
+      </TouchableOpacity>
+    );
+  };
+
+  const generateSeats = () => {
+    const rows = [];
+    let seat = 1;
+
+    while (seat <= 30) {
+      const row = (
+        <View key={seat} style={styles.row}>
+          <View style={styles.singleSeat}>{renderSeat(seat++)}</View>
+          <View style={styles.aisleSpace} />
+          <View style={styles.doubleSeat}>
+            {seat <= 30 && renderSeat(seat++)}
+            {seat <= 30 && renderSeat(seat++)}
+          </View>
+        </View>
+      );
+      rows.push(row);
+    }
+
+    if (seat <= 35) {
+      const lastRow = (
+        <View key="lastRow" style={[styles.row, { justifyContent: "center" }]}>
+          {[31, 32, 33, 34, 35].map((s) => (
+            <View key={s} style={{ marginHorizontal: 3 }}>
+              {renderSeat(s)}
+            </View>
+          ))}
+        </View>
+      );
+      rows.push(lastRow);
+    }
+
+    return rows;
+  };
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: "center" }]}>
+        <ActivityIndicator size="large" color="#800080" />
+        <Text>Loading seat availability...</Text>
+      </View>
+    );
   }
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{busName}</Text>
-      <Text>{from} ➞ {to}</Text>
+      <Text>
+        {from} ➞ {to}
+      </Text>
       <Text>Travel Date: {travelDate}</Text>
 
       <View style={styles.layoutBox}>
@@ -117,40 +212,12 @@ const Bookyseat = ({ route }) => {
           </View>
         </View>
 
-        {seatRows.map((row, rowIndex) => (
-          <View key={rowIndex} style={styles.row}>
-            {row.map((item, index) =>
-              item === "aisle" ? (
-                <View key={index} style={styles.aisleSpace} />
-              ) : (
-                <View
-                  key={`${busId || "bus"}-${item}`}
-                  style={styles.seatWrapper}
-                >
-                  <TouchableOpacity
-                    style={[
-                      styles.seat,
-                      reservedSeats.includes(item)
-                        ? styles.soldSeat
-                        : selectedSeats.includes(item)
-                        ? styles.selectedSeat
-                        : styles.availableSeat,
-                    ]}
-                    onPress={() => toggleSeatSelection(item)}
-                    disabled={reservedSeats.includes(item)}
-                  >
-                    <Text style={styles.seatText}>
-                      {reservedSeats.includes(item) ? "X" : item}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              )
-            )}
-          </View>
-        ))}
+        {generateSeats()}
       </View>
 
-      <Text style={styles.totalPrice}>Total Price: ₹{totalPrice}</Text>
+      <Text style={styles.totalPrice}>
+        Total Price: ₹{selectedSeats.length * price}
+      </Text>
 
       <TouchableOpacity style={styles.bookButton} onPress={handleBookNow}>
         <Text style={styles.buttonText}>Proceed</Text>
@@ -203,16 +270,18 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: "row",
-    justifyContent: "center",
     alignItems: "center",
     marginBottom: 10,
   },
-  seatWrapper: {
-    alignItems: "center",
-    marginHorizontal: 3,
-  },
   aisleSpace: {
     width: 30,
+  },
+  singleSeat: {
+    flexDirection: "row",
+  },
+  doubleSeat: {
+    flexDirection: "row",
+    gap: 6,
   },
   seat: {
     width: 30,
@@ -221,14 +290,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 5,
     borderWidth: 2,
+    marginHorizontal: 3,
   },
   availableSeat: {
     borderColor: "green",
     backgroundColor: "#fff",
   },
   soldSeat: {
-    borderColor: "#ddd",
-    backgroundColor: "#f2f2f2",
+    borderColor: "red",
+    backgroundColor: "#fdd",
   },
   selectedSeat: {
     borderColor: "#FF7F50",

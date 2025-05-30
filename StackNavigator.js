@@ -18,8 +18,12 @@ import History from './src/screen/History';
 import CancelTicketRequestScreen from './src/screen/CancelTicketRequestScreen.js';
 import AboutUs from './src/screen/AboutUs';
 import UpdateTicket from './src/screen/UpdateTicket';
-import AdminPage from './src/screen/AdminPage'; // ✅ Add this at the top
+import AdminPage from './src/screen/AdminPage'; 
+import AdminMenu from './src/screen/AdminMenu.js';
+import ProfileMenu from './src/screen/ProfileMenu.js';
+
 // import AuthLoading from './AuthLoading';
+
 
 const Stack = createNativeStackNavigator();
 
@@ -39,7 +43,8 @@ const StackNavigator = () => {
         {/* All other screens — NO bottom tabs */}
         <Stack.Screen name="Home" component={HomeScreen}/>
         <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="SignUp" component={SignUpScreen}  />
+        <Stack.Screen name="SignUp" component={SignUpScreen} />
+
         <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
         <Stack.Screen name="SelectRoute" component={SelectRouteScreen} />
 
@@ -48,12 +53,13 @@ const StackNavigator = () => {
         <Stack.Screen name="TicketForm" component={TicketFormScreen} />
         <Stack.Screen name="AdminLog" component={AdminLogin} />
         <Stack.Screen name="AdminPage" component={AdminPage} />
-
+        <Stack.Screen name="AdminMenu" component={AdminMenu}/>
          <Stack.Screen name="AdminSign" component={AdminSignup}/>
          <Stack.Screen name="Histo" component={History} options={{title:'Booking History'}} />
         <Stack.Screen name="CancelTicket" component={CancelTicketRequestScreen}/>
          <Stack.Screen name="AboutUs" component={AboutUs} />
          <Stack.Screen name="UpdateTicket" component={UpdateTicket} />
+         <Stack.Screen name="ProfileMenu" component={UpdateTicket} />
 
       </Stack.Navigator>
     </NavigationContainer>

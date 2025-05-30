@@ -6,7 +6,7 @@ import {
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { auth, db } from '../firebaseConfig'; // your firebase config here
+import { auth, db } from '../firebaseConfig'; // your firebase config
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 
@@ -49,17 +49,20 @@ const SignUpScreen = ({ navigation }) => {
         createdAt: new Date().toISOString()
       });
 
-      // Persist login
       await AsyncStorage.setItem("keepLoggedIn", "true");
       await AsyncStorage.setItem("currentUserUid", uid);
 
-      Alert.alert("Success", "Account created successfully!");
-
-      // Navigate to home screen after signup
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Home' }],
-      });
+      Alert.alert("Success", "Account created successfully!", [
+        {
+          text: 'OK',
+          onPress: () => {
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Login' }],
+            });
+          },
+        },
+      ]);
     } catch (error) {
       console.log(error);
       Alert.alert("Sign-up Error", error.message);
@@ -168,7 +171,7 @@ const SignUpScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-        {/* Sign Up Button */}
+        {/* ✅ Sign Up Button */}
         <TouchableOpacity style={styles.button} onPress={handleEmailSignUp}>
           <Text style={styles.buttonText}>Sign Up</Text>
         </TouchableOpacity>

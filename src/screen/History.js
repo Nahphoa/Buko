@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View, FlatList, Alert } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import { db, auth } from '../firebaseConfig';
-import { collection, getDocs, deleteDoc, doc, updateDoc, query, where } from 'firebase/firestore';
+import { collection, getDocs, deleteDoc, doc, query, where } from 'firebase/firestore';
 
 const History = () => {
   const [bookings, setBookings] = useState([]);
@@ -11,12 +11,10 @@ const History = () => {
       try {
         const user = auth.currentUser;
         if (!user) {
-          // No user logged in
           setBookings([]);
           return;
         }
 
-        // Query bookings where userId matches current user's uid
         const q = query(collection(db, "Booking"), where("userId", "==", user.uid));
         const querySnapshot = await getDocs(q);
 
@@ -32,8 +30,6 @@ const History = () => {
     };
 
     fetchBookings();
-
-    // Optionally, you can add a listener for auth state changes or refresh on focus
   }, []);
 
   const handleDelete = (ticketId) => {
@@ -58,34 +54,6 @@ const History = () => {
     );
   };
 
-  const handleCancel = (ticketId) => {
-    Alert.alert(
-      "Cancel Confirmation",
-      "Are you sure you want to cancel this ticket?",
-      [
-        { text: "No", style: "cancel" },
-        {
-          text: "Yes, Cancel",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              const bookingRef = doc(db, "Booking", ticketId);
-              await updateDoc(bookingRef, { status: "cancelled" });
-              setBookings(prev =>
-                prev.map(item =>
-                  item.ticket_id === ticketId ? { ...item, status: "cancelled" } : item
-                )
-              );
-              Alert.alert("Cancelled", "Your ticket has been cancelled.");
-            } catch (error) {
-              console.error("Error cancelling booking:", error);
-            }
-          }
-        }
-      ]
-    );
-  };
-
   const renderItem = ({ item }) => (
     <View style={styles.ticket}>
       <View style={styles.sideLabel}>
@@ -94,7 +62,7 @@ const History = () => {
 
       <View style={styles.detailsSection}>
         <Text style={styles.name}>
-          <Text style={styles.bold}>Name: </Text>{item.name} ({item.gender}, {item.age})
+          <Text style={styles.bold}>Name: </Text>{item.username} ({item.gender}, {item.age})
         </Text>
         <Text style={styles.text}>
           Travel Date: <Text style={styles.bold}>{item.travelDate}</Text>
@@ -110,14 +78,6 @@ const History = () => {
             {item.status === 'cancelled' ? 'Cancelled' : 'Confirmed'}
           </Text>
         </Text>
-
-        {item.status !== 'cancelled' && (
-          <>
-            <Text style={styles.cancelButton} onPress={() => handleCancel(item.ticket_id)}>
-              ❌ Cancel
-            </Text>
-          </>
-        )}
 
         <Text style={styles.deleteButton} onPress={() => handleDelete(item.ticket_id)}>
           🗑️ Delete
@@ -138,7 +98,6 @@ const History = () => {
 
   return (
     <View style={styles.container}>
-      
       <FlatList
         data={bookings}
         keyExtractor={(item) => item.ticket_id}
@@ -228,12 +187,6 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     color: '#e53935',
-    marginTop: 10,
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  cancelButton: {
-    color: '#ff8c00',
     marginTop: 10,
     fontSize: 14,
     fontWeight: 'bold',

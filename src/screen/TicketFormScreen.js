@@ -6,11 +6,13 @@ import {
   Button,
   StyleSheet,
   Alert,
+  TouchableOpacity,
 } from "react-native";
-import { Picker } from "@react-native-picker/picker";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { db } from "../firebaseConfig";
 import { collection, addDoc } from "firebase/firestore";
+
+const genders = ["Male", "Female", "Other"];
 
 const TicketFormScreen = () => {
   const navigation = useNavigation();
@@ -26,7 +28,7 @@ const TicketFormScreen = () => {
     busNumber,
     time,
     price,
-    busId
+    busId,
   } = bookingData;
 
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -40,6 +42,11 @@ const TicketFormScreen = () => {
   const handleSubmit = async () => {
     if (!name || !phone || !age) {
       Alert.alert("Missing Info", "Please fill in all the fields.");
+      return;
+    }
+
+    if (phone.length !== 10) {
+      Alert.alert("Invalid Phone Number", "Phone number must be exactly 10 digits.");
       return;
     }
 
@@ -75,12 +82,9 @@ const TicketFormScreen = () => {
           await addDoc(collection(db, "Booking"), passenger);
         }
         Alert.alert("Success", "Booking confirmed for all passengers!");
-       navigation.navigate('Home', {
-  screen: 'BottomTabs',
-});
-
-
-
+        navigation.navigate("MainTab", {
+          screen: "BottomTabs",
+        });
       } catch (error) {
         console.error("Error saving booking:", error);
         Alert.alert("Error", "Something went wrong while saving booking.");
@@ -105,8 +109,13 @@ const TicketFormScreen = () => {
         style={styles.input}
         placeholder="Phone Number"
         value={phone}
-        onChangeText={setPhone}
+        onChangeText={(text) => {
+          // Allow only digits, max length 10
+          const filtered = text.replace(/[^0-9]/g, "");
+          setPhone(filtered);
+        }}
         keyboardType="phone-pad"
+        maxLength={10}
       />
 
       <TextInput
@@ -117,21 +126,35 @@ const TicketFormScreen = () => {
         keyboardType="numeric"
       />
 
-      <Picker
-        selectedValue={gender}
-        onValueChange={(itemValue) => setGender(itemValue)}
-        style={styles.input}
-      >
-        <Picker.Item label="Male" value="Male" />
-        <Picker.Item label="Female" value="Female" />
-        <Picker.Item label="Other" value="Other" />
-      </Picker>
+      <Text style={styles.label}>Gender</Text>
+      <View style={styles.genderContainer}>
+        {genders.map((g) => (
+          <TouchableOpacity
+            key={g}
+            style={[
+              styles.genderButton,
+              gender === g && styles.genderButtonSelected,
+            ]}
+            onPress={() => setGender(g)}
+          >
+            <Text
+              style={[
+                styles.genderText,
+                gender === g && styles.genderTextSelected,
+              ]}
+            >
+              {g}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
 
       <Button
         title={
           currentIndex + 1 < selectedSeats.length ? "Next" : "Confirm Booking"
         }
         onPress={handleSubmit}
+        color="#800080"
       />
     </View>
   );
@@ -157,5 +180,33 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 8,
     marginBottom: 15,
+  },
+  label: {
+    fontSize: 16,
+    marginBottom: 8,
+  },
+  genderContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 20,
+  },
+  genderButton: {
+    flex: 1,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: "#800080",
+    borderRadius: 8,
+    marginHorizontal: 5,
+    alignItems: "center",
+  },
+  genderButtonSelected: {
+    backgroundColor: "#800080",
+  },
+  genderText: {
+    color: "#800080",
+    fontWeight: "bold",
+  },
+  genderTextSelected: {
+    color: "#fff",
   },
 });

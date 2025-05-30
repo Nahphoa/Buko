@@ -11,7 +11,6 @@ import {
 import { auth, db } from '../firebaseConfig';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { collection, getDocs, query, where } from 'firebase/firestore';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function AdminLogin({ navigation }) {
   const [email, setEmail] = useState('');
@@ -35,7 +34,7 @@ export default function AdminLogin({ navigation }) {
       const adminRef = collection(db, 'admins');
       const q = query(
         adminRef,
-        where('uid', '==', user.uid), // use UID to match exact user
+        where('uid', '==', user.uid),
         where('source', '==', source),
         where('destination', '==', destination),
         where('adminKey', '==', adminKey)
@@ -50,10 +49,7 @@ export default function AdminLogin({ navigation }) {
 
       const adminDoc = snapshot.docs[0].data();
 
-      // Step 3: Save admin session
-      await AsyncStorage.setItem('keepAdminLoggedIn', 'true');
-      await AsyncStorage.removeItem('keepLoggedIn');
-
+      // Step 3: Navigate to AdminPage (Firebase handles session persistence)
       Alert.alert('Success', 'Login successful!');
 
       navigation.reset({

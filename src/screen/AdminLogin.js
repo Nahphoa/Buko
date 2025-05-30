@@ -7,10 +7,12 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  Image,
 } from 'react-native';
 import { auth, db } from '../firebaseConfig';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { collection, getDocs, query, where } from 'firebase/firestore';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 export default function AdminLogin({ navigation }) {
   const [email, setEmail] = useState('');
@@ -18,6 +20,7 @@ export default function AdminLogin({ navigation }) {
   const [source, setSource] = useState('');
   const [destination, setDestination] = useState('');
   const [adminKey, setAdminKey] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password || !source || !destination || !adminKey) {
@@ -26,11 +29,9 @@ export default function AdminLogin({ navigation }) {
     }
 
     try {
-      // Step 1: Authenticate using Firebase Auth
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Step 2: Query Firestore for the admin profile
       const adminRef = collection(db, 'admins');
       const q = query(
         adminRef,
@@ -49,7 +50,6 @@ export default function AdminLogin({ navigation }) {
 
       const adminDoc = snapshot.docs[0].data();
 
-      // Step 3: Navigate to AdminPage (Firebase handles session persistence)
       Alert.alert('Success', 'Login successful!');
 
       navigation.reset({
@@ -71,41 +71,72 @@ export default function AdminLogin({ navigation }) {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      <Image
+        source={require('../Image/logo.png')} // <-- Add your logo here
+        style={styles.logo}
+      />
+
       <Text style={styles.title}>Admin Login</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Enter your email"
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-        value={email}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Enter your password"
-        onChangeText={setPassword}
-        secureTextEntry
-        value={password}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Enter source"
-        onChangeText={setSource}
-        value={source}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Enter destination"
-        onChangeText={setDestination}
-        value={destination}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Enter Admin Key"
-        onChangeText={setAdminKey}
-        value={adminKey}
-      />
+      <View style={styles.inputContainer}>
+        <Icon name="email-outline" size={20} style={styles.icon} />
+        <TextInput
+          style={styles.input}
+          placeholder="Enter your email"
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          value={email}
+        />
+      </View>
+
+      <View style={styles.inputContainer}>
+        <Icon name="lock-outline" size={20} style={styles.icon} />
+        <TextInput
+          style={styles.input}
+          placeholder="Enter your password"
+          onChangeText={setPassword}
+          secureTextEntry={!showPassword}
+          value={password}
+        />
+        <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+          <Icon
+            name={showPassword ? "eye-off-outline" : "eye-outline"}
+            size={20}
+            style={styles.icon}
+          />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.inputContainer}>
+        <Icon name="map-marker-outline" size={20} style={styles.icon} />
+        <TextInput
+          style={styles.input}
+          placeholder="Enter source"
+          onChangeText={setSource}
+          value={source}
+        />
+      </View>
+
+      <View style={styles.inputContainer}>
+        <Icon name="map-marker-radius-outline" size={20} style={styles.icon} />
+        <TextInput
+          style={styles.input}
+          placeholder="Enter destination"
+          onChangeText={setDestination}
+          value={destination}
+        />
+      </View>
+
+      <View style={styles.inputContainer}>
+        <Icon name="key-outline" size={20} style={styles.icon} />
+        <TextInput
+          style={styles.input}
+          placeholder="Enter Admin Key"
+          onChangeText={setAdminKey}
+          value={adminKey}
+        />
+      </View>
 
       <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
         <Text style={styles.loginText}>Log In</Text>
@@ -125,21 +156,39 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     flexGrow: 1,
+    marginTop: -60,
+  },
+  logo: {
+    width: 120,
+    height: 120,
+    marginTop: -30,
+    marginBottom: 10,
+    resizeMode: 'contain',
   },
   title: {
     fontSize: 22,
     fontWeight: 'bold',
     marginBottom: 20,
-    marginTop: 40,
     textAlign: 'center',
+    color: '#003366',
   },
-  input: {
-    width: '100%',
-    padding: 12,
-    marginBottom: 12,
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1,
     borderRadius: 8,
-    backgroundColor: '#fff',
+    paddingHorizontal: 10,
+    marginBottom: 12,
+    width: '100%',
+  },
+  icon: {
+    marginRight: 8,
+    color: '#333',
+  },
+  input: {
+    flex: 1,
+    height: 44,
+    fontSize: 16,
   },
   loginBtn: {
     backgroundColor: '#800080',

@@ -36,29 +36,21 @@ export default function ProfileMenu({ navigation }) {
   useEffect(() => {
     if (user) {
       setEmail(user.email || '');
-      setPhone(user.phoneNumber || '');
-
-      if (user.displayName) {
-        setUserName(user.displayName);
-      } else {
-        fetchUserNameFromFirestore();
-      }
-
+      fetchUserDataFromFirestore();
       fetchProfileImage();
     }
   }, []);
 
-  const fetchUserNameFromFirestore = async () => {
+  const fetchUserDataFromFirestore = async () => {
     try {
       const docSnap = await getDoc(doc(db, 'users', user.uid));
       if (docSnap.exists()) {
         const data = docSnap.data();
-        if (data.name) {
-          setUserName(data.name);
-        }
+        if (data.name) setUserName(data.name);
+        if (data.phone) setPhone(data.phone);
       }
     } catch (err) {
-      console.error('Error fetching user name:', err.message);
+      console.error('Error fetching user data:', err.message);
     }
   };
 
@@ -122,21 +114,38 @@ export default function ProfileMenu({ navigation }) {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await auth.signOut();
-      await AsyncStorage.removeItem('keepLoggedIn');
-      navigation.replace('LoginScreen');
-    } catch (error) {
-      console.error("Logout error:", error);
-      Alert.alert("Logout Failed", error.message);
-    }
-  };
+ const handleLogout = async () => {
+  Alert.alert(
+    "Confirm Logout",
+    "Are you sure you want to logout?",
+    [
+      {
+        text: "Cancel",
+        onPress: () => console.log("Logout canceled"),
+        style: "cancel",
+      },
+      {
+        text: "Yes, Logout",
+        onPress: async () => {
+          try {
+            await auth.signOut();
+            await AsyncStorage.removeItem('keepLoggedIn');
+            navigation.replace('ProfileMenu');
+          } catch (error) {
+            console.error("Logout error:", error);
+            Alert.alert("Logout Failed", error.message);
+          }
+        },
+      },
+    ],
+    { cancelable: true }
+  );
+};
+
 
   return (
     <View style={{ flex: 1, paddingTop: 50, alignItems: 'center' }}>
-      <Text style={styles.heading}>Welcome to Buko</Text>
-
+      {/* Profile Section First */}
       <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.profileContainer}>
         <Image
           source={
@@ -147,22 +156,21 @@ export default function ProfileMenu({ navigation }) {
           style={styles.image}
         />
         <View style={styles.infoContainer}>
-          <Text style={styles.infoLabel}>Name:</Text>
           <Text style={styles.infoText}>{userName || 'Not set'}</Text>
-
-          <Text style={styles.infoLabel}>Email:</Text>
           <Text style={styles.infoText}>{email || 'Not available'}</Text>
-
-          <Text style={styles.infoLabel}>Phone:</Text>
           <Text style={styles.infoText}>{phone || 'Not available'}</Text>
         </View>
       </TouchableOpacity>
 
+      {/* Moved Welcome Heading Below */}
+      <Text style={styles.heading}>Welcome to Buko</Text>
+
+      {/* Buttons */}
       <TouchableOpacity onPress={() => navigation.navigate('Login')} style={styles.button}>
         <Text style={styles.buttonText}>Login</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => navigation.navigate('SignUpScreen')} style={styles.button}>
+      <TouchableOpacity onPress={() => navigation.navigate('SignUp')} style={styles.button}>
         <Text style={styles.buttonText}>Sign Up</Text>
       </TouchableOpacity>
 
@@ -170,11 +178,11 @@ export default function ProfileMenu({ navigation }) {
         <Text style={styles.buttonText}>Admin Panel</Text>
       </TouchableOpacity>
 
-      {/* Logout button */}
-      <TouchableOpacity onPress={handleLogout} style={[styles.button, { borderColor: 'red' }]}>
-        <Text style={[styles.buttonText, { color: 'red' }]}>Logout</Text>
+      <TouchableOpacity onPress={handleLogout} style={[styles.button, { borderColor: '#000000' }]}>
+        <Text style={[styles.buttonText, { color: '#000080' }]}>Logout</Text>
       </TouchableOpacity>
 
+      {/* Image Picker Modal */}
       <Modal visible={modalVisible} transparent animationType="slide">
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
@@ -219,8 +227,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   image: {
-    width: 100,
-    height: 100,
+    width: 60,
+    height: 70,
     borderRadius: 60,
     borderWidth: 2,
     borderColor: '#003580',
@@ -228,11 +236,6 @@ const styles = StyleSheet.create({
   },
   infoContainer: {
     flex: 1,
-  },
-  infoLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#003580',
   },
   infoText: {
     fontSize: 14,

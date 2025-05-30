@@ -1,23 +1,30 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 
 export default function AdminMenu({ navigation }) {
   return (
     <View style={styles.container}>
+      {/* Logo at top center */}
+      <Image
+        source={require('../Image/logo.png')} // Replace with your logo path
+        style={styles.logo}
+        resizeMode="contain"
+      />
+
       <Text style={styles.heading}>Admin Access</Text>
 
       <TouchableOpacity 
         onPress={() => navigation.navigate('AdminLog')}
-        style={[styles.button, { borderColor: 'orange' }]}
+        style={[styles.button, { borderColor: 'navy' }]}
       >
-        <Text style={[styles.buttonText, { color: 'blue' }]}>Admin Login</Text>
+        <Text style={[styles.buttonText, { color: 'navy' }]}>Admin Login</Text>
       </TouchableOpacity>
 
       <TouchableOpacity 
         onPress={() => navigation.navigate('AdminSign')}
-        style={[styles.button, { borderColor: 'green' }]}
+        style={[styles.button, { borderColor: 'navy' }]}
       >
-        <Text style={[styles.buttonText, { color: 'green' }]}>Admin SignUp</Text>
+        <Text style={[styles.buttonText, { color: 'Navy' }]}>Admin SignUp</Text>
       </TouchableOpacity>
     </View>
   );
@@ -29,11 +36,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    marginTop:-70,
+    backgroundColor: '#fff',
+  },
+  logo: {
+    width: 230,
+    height: 200,
+    marginBottom: 20,
+    marginTop: -40,
   },
   heading: {
     fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 40,
+    color: '#003580',
   },
   button: {
     borderWidth: 2,

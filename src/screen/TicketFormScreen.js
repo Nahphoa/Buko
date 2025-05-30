@@ -10,7 +10,8 @@ import {
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { db } from "../firebaseConfig";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, query, where, getDocs } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 
 const genders = ["Male", "Female", "Other"];
 
@@ -39,6 +40,9 @@ const TicketFormScreen = () => {
   const [age, setAge] = useState("");
   const [gender, setGender] = useState("Male");
 
+  const auth = getAuth();
+  const user = auth.currentUser;
+
   const handleSubmit = async () => {
     if (!name || !phone || !age) {
       Alert.alert("Missing Info", "Please fill in all the fields.");
@@ -50,6 +54,32 @@ const TicketFormScreen = () => {
       return;
     }
 
+    const seatNumber = selectedSeats[currentIndex];
+
+    // 🔒 Check for duplicate booking before submitting
+    try {
+      const bookingQuery = query(
+        collection(db, "Booking"),
+        where("userId", "==", user?.uid || null),
+        where("seatNumber", "==", seatNumber),
+        where("travelDate", "==", travelDate),
+        where("busId", "==", busId)
+      );
+
+      const querySnapshot = await getDocs(bookingQuery);
+      if (!querySnapshot.empty) {
+        Alert.alert(
+          "Duplicate Booking",
+          `Seat ${seatNumber} is already booked for you on this bus and date.`
+        );
+        return;
+      }
+    } catch (error) {
+      console.error("Error checking for duplicates:", error);
+      Alert.alert("Error", "Unable to check for duplicate booking.");
+      return;
+    }
+
     const passengerData = {
       busId,
       busName,
@@ -58,14 +88,16 @@ const TicketFormScreen = () => {
       to,
       time: time || "Not Provided",
       travelDate,
-      seatNumber: selectedSeats[currentIndex],
-      userName: name,
+      seatNumber,
+      username: name,
       phone,
       age,
       gender,
       price,
       totalPrice: selectedSeats.length * price,
       bookingTime: new Date(),
+      userId: user?.uid || null,
+      bookingDate: new Date().toLocaleDateString(),
     };
 
     setPassengers([...passengers, passengerData]);
@@ -78,9 +110,11 @@ const TicketFormScreen = () => {
       setGender("Male");
     } else {
       try {
+        // Save all passengers (already verified)
         for (let passenger of [...passengers, passengerData]) {
           await addDoc(collection(db, "Booking"), passenger);
         }
+
         Alert.alert("Success", "Booking confirmed for all passengers!");
         navigation.navigate("MainTab", {
           screen: "BottomTabs",
@@ -110,7 +144,6 @@ const TicketFormScreen = () => {
         placeholder="Phone Number"
         value={phone}
         onChangeText={(text) => {
-          // Allow only digits, max length 10
           const filtered = text.replace(/[^0-9]/g, "");
           setPhone(filtered);
         }}
@@ -151,7 +184,9 @@ const TicketFormScreen = () => {
 
       <Button
         title={
-          currentIndex + 1 < selectedSeats.length ? "Next" : "Confirm Booking"
+          currentIndex + 1 < selectedSeats.length
+            ? "Next"
+            : "Confirm Booking"
         }
         onPress={handleSubmit}
         color="#800080"

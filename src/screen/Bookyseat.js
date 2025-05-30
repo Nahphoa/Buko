@@ -7,6 +7,8 @@ import {
   Image,
   Alert,
   ActivityIndicator,
+  ScrollView,
+  SafeAreaView,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { auth } from "../firebaseConfig";
@@ -32,7 +34,6 @@ const Bookyseat = ({ route }) => {
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Load reserved seats for this busId + travelDate + time from Firestore bookings
   useEffect(() => {
     const fetchReservedSeats = async () => {
       try {
@@ -42,7 +43,6 @@ const Bookyseat = ({ route }) => {
           return;
         }
 
-        // Query bookings where busId, travelDate and time match, and status is confirmed
         const bookingsRef = collection(db, "Booking");
         const q = query(
           bookingsRef,
@@ -62,7 +62,6 @@ const Bookyseat = ({ route }) => {
           }
         });
 
-        // Remove duplicates and sort
         const uniqueSeats = [...new Set(bookedSeats)];
         setReservedSeats(uniqueSeats);
       } catch (error) {
@@ -110,8 +109,6 @@ const Bookyseat = ({ route }) => {
 
     try {
       await addDoc(collection(db, "Booking"), bookingData);
-
-      Alert.alert("Booking Confirmed", "Your seats have been booked!");
 
       if (!user) {
         navigation.navigate("SignUp", {
@@ -194,44 +191,56 @@ const Bookyseat = ({ route }) => {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>{busName}</Text>
-      <Text>
-        {from} ➞ {to}
-      </Text>
-      <Text>Travel Date: {travelDate}</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <Text style={styles.title}>{busName}</Text>
+        <Text>
+          {from} ➞ {to}
+        </Text>
+        <Text>Travel Date: {travelDate}</Text>
 
-      <View style={styles.layoutBox}>
-        <View style={styles.layoutHeader}>
-          <View style={styles.lowerLabelContainer}>
-            <Text style={styles.layoutLabel}>Lower</Text>
-            <Image
-              source={require("../Image/steering.jpg")}
-              style={styles.steeringIcon}
-            />
+        <View style={styles.layoutBox}>
+          <View style={styles.layoutHeader}>
+            <View style={styles.lowerLabelContainer}>
+              <Text style={styles.layoutLabel}>Lower</Text>
+              <Image
+                source={require("../Image/steering.jpg")}
+                style={styles.steeringIcon}
+              />
+            </View>
           </View>
+
+          {generateSeats()}
         </View>
 
-        {generateSeats()}
-      </View>
+        <View style={styles.footer}>
+          <Text style={styles.totalPrice}>
+            Total Price: ₹{selectedSeats.length * price}
+          </Text>
 
-      <Text style={styles.totalPrice}>
-        Total Price: ₹{selectedSeats.length * price}
-      </Text>
-
-      <TouchableOpacity style={styles.bookButton} onPress={handleBookNow}>
-        <Text style={styles.buttonText}>Proceed</Text>
-      </TouchableOpacity>
-    </View>
+          <TouchableOpacity style={styles.bookButton} onPress={handleBookNow}>
+            <Text style={styles.buttonText}>Proceed</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 export default Bookyseat;
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    padding: 20,
+    alignItems: "center",
+  },
   container: {
     flex: 1,
-    padding: 40,
     alignItems: "center",
     backgroundColor: "#fff",
   },
@@ -241,7 +250,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   layoutBox: {
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: "#800080",
     borderRadius: 8,
     padding: 10,
@@ -252,21 +261,25 @@ const styles = StyleSheet.create({
   },
   layoutHeader: {
     width: "100%",
-    marginBottom: 40,
+    marginBottom: 20,
+    flexDirection: "row",
+    justifyContent: "center",
   },
   lowerLabelContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    justifyContent: "center",
+    marginBottom: -15,
   },
   layoutLabel: {
     fontSize: 16,
     fontWeight: "bold",
+    marginRight: 10,
   },
   steeringIcon: {
     width: 40,
     height: 50,
-    marginLeft: "auto",
+    marginLeft: 45,
   },
   row: {
     flexDirection: "row",
@@ -284,8 +297,8 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   seat: {
-    width: 30,
-    height: 30,
+    width: 35,
+    height: 35,
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 5,
@@ -309,21 +322,24 @@ const styles = StyleSheet.create({
     color: "#000",
     fontSize: 12,
   },
+  footer: {
+    alignItems: "center",
+    marginTop: 20,
+  },
   totalPrice: {
     fontSize: 18,
     fontWeight: "bold",
-    marginVertical: 10,
+    marginBottom: 10,
   },
   bookButton: {
     backgroundColor: "#800080",
-    padding: 10,
-    marginTop: 10,
+    padding: 15,
     borderRadius: 5,
     width: "60%",
+    alignItems: "center",
   },
   buttonText: {
     color: "#fff",
-    textAlign: "center",
     fontWeight: "bold",
   },
 });

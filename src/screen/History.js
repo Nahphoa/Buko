@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View, FlatList, Alert } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import { db, auth } from '../firebaseConfig';
-import { collection, getDocs, deleteDoc, doc, query, where } from 'firebase/firestore';
+import { collection, getDocs, deleteDoc, doc, updateDoc, query, where } from 'firebase/firestore';
 
 const History = () => {
   const [bookings, setBookings] = useState([]);
@@ -18,10 +18,14 @@ const History = () => {
         const q = query(collection(db, "Booking"), where("userId", "==", user.uid));
         const querySnapshot = await getDocs(q);
 
-        const fetched = querySnapshot.docs.map(doc => ({
-          ticket_id: doc.id,
-          ...doc.data()
-        }));
+        const fetched = querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          console.log("Fetched booking document:", data);
+          return {
+            ticket_id: doc.id,
+            ...data
+          };
+        });
 
         setBookings(fetched);
       } catch (error) {
@@ -79,6 +83,7 @@ const History = () => {
           </Text>
         </Text>
 
+        {/* Removed Cancel Button */}
         <Text style={styles.deleteButton} onPress={() => handleDelete(item.ticket_id)}>
           🗑️ Delete
         </Text>
@@ -187,6 +192,12 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     color: '#e53935',
+    marginTop: 10,
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  cancelButton: {
+    color: '#ff8c00',
     marginTop: 10,
     fontSize: 14,
     fontWeight: 'bold',

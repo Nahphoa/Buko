@@ -138,7 +138,7 @@ export default function AdminLogin({ navigation }) {
         />
       </View>
 
-      <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
+      <TouchableOpacity style={styles.loginBtn} onPress={() => navigation.navigate('AdminPage')}>
         <Text style={styles.loginText}>Log In</Text>
       </TouchableOpacity>
 

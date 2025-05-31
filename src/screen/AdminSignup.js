@@ -14,18 +14,27 @@ import { collection, addDoc } from 'firebase/firestore';
 import { auth, db } from '../firebaseConfig';
 
 export default function AdminSignup({ navigation }) {
-  const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [gender, setGender] = useState('');
-  const [phone, setPhone] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [source, setSource] = useState('');
   const [destination, setDestination] = useState('');
   const [adminKey, setAdminKey] = useState('');
 
   const handleSignup = async () => {
-    if (!name || !email || !password || !gender || !phone || !source || !destination || !adminKey) {
+    if (
+      !username ||
+      !email ||
+      !password ||
+      !gender ||
+      !phoneNumber ||
+      !source ||
+      !destination ||
+      !adminKey
+    ) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
@@ -41,10 +50,10 @@ export default function AdminSignup({ navigation }) {
 
       await addDoc(collection(db, 'admins'), {
         uid: user.uid,
-        name,
+        username,
         email,
         gender,
-        phone,
+        phoneNumber,
         source,
         destination,
         adminKey,
@@ -52,9 +61,8 @@ export default function AdminSignup({ navigation }) {
       });
 
       Alert.alert('Success', 'Admin account created');
-      navigation.replace('AdminLog'); // Go to login first
+      navigation.replace('AdminLog');
     } catch (error) {
-      console.error('Signup error:', error);
       Alert.alert('Signup Error', error.message);
     }
   };
@@ -62,7 +70,7 @@ export default function AdminSignup({ navigation }) {
   const handlePhoneChange = (value) => {
     const numeric = value.replace(/[^0-9]/g, '');
     if (numeric.length <= 10) {
-      setPhone(numeric);
+      setPhoneNumber(numeric);
     }
   };
 
@@ -73,7 +81,12 @@ export default function AdminSignup({ navigation }) {
 
         <View style={styles.inputContainer}>
           <MaterialIcons name="person" size={20} color="#000" />
-          <TextInput style={styles.input} placeholder="Name" value={name} onChangeText={setName} />
+          <TextInput
+            style={styles.input}
+            placeholder="Name"
+            value={username}
+            onChangeText={setUsername}
+          />
         </View>
 
         <View style={styles.inputContainer}>
@@ -84,6 +97,7 @@ export default function AdminSignup({ navigation }) {
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
+            autoCapitalize="none"
           />
         </View>
 
@@ -95,6 +109,7 @@ export default function AdminSignup({ navigation }) {
             value={password}
             onChangeText={setPassword}
             secureTextEntry={!showPassword}
+            autoCapitalize="none"
           />
           <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
             <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={20} color="gray" />
@@ -125,9 +140,10 @@ export default function AdminSignup({ navigation }) {
           <TextInput
             style={styles.input}
             placeholder="Phone"
-            value={phone}
+            value={phoneNumber}
             onChangeText={handlePhoneChange}
             keyboardType="phone-pad"
+            maxLength={10}
           />
         </View>
 
@@ -148,6 +164,7 @@ export default function AdminSignup({ navigation }) {
           placeholder="Admin Key"
           value={adminKey}
           onChangeText={setAdminKey}
+          secureTextEntry
         />
 
         <TouchableOpacity style={styles.button} onPress={handleSignup}>
@@ -162,7 +179,6 @@ export default function AdminSignup({ navigation }) {
   );
 }
 
-// Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -229,6 +245,7 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 6,
     alignItems: 'center',
+    marginTop: 10,
   },
   buttonText: {
     color: '#fff',

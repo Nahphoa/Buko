@@ -26,6 +26,8 @@ export default function ProfileMenu({ navigation }) {
   const [userName, setUserName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [isAdmin, setIsAdmin] = useState(false);
+
   const user = auth.currentUser;
   const db = getFirestore();
 
@@ -36,28 +38,46 @@ export default function ProfileMenu({ navigation }) {
   useEffect(() => {
     if (user) {
       setEmail(user.email || '');
-      fetchUserDataFromFirestore();
+      checkIfAdminAndFetchData();
       fetchProfileImage();
     }
   }, []);
 
-  const fetchUserDataFromFirestore = async () => {
+  // Check if user is admin by trying to fetch admin doc
+  const checkIfAdminAndFetchData = async () => {
     try {
-      const docSnap = await getDoc(doc(db, 'users', user.uid));
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        if (data.username) setUserName(data.username);
-        if (data.phoneNumber) setPhone(data.phoneNumber);
+      // Try fetching from Admins collection
+      const adminDocSnap = await getDoc(doc(db, 'Admins', user.uid));
+      if (adminDocSnap.exists()) {
+        // User is admin
+        setIsAdmin(true);
+        const adminData = adminDocSnap.data();
+        if (adminData.username) setUserName(adminData.username);
+        if (adminData.phoneNumber) setPhone(adminData.phoneNumber);
+      } else {
+        // Not admin, fetch from users collection
+        const userDocSnap = await getDoc(doc(db, 'users', user.uid));
+        if (userDocSnap.exists()) {
+          const userData = userDocSnap.data();
+          if (userData.username) setUserName(userData.username);
+          if (userData.phoneNumber) setPhone(userData.phoneNumber);
+        }
       }
     } catch (err) {
-      console.error('Error fetching user data:', err.message);
+      console.error('Error fetching user/admin data:', err.message);
     }
   };
 
   const fetchProfileImage = async () => {
     try {
-      const docSnap = await getDoc(doc(db, 'users', user.uid));
-      if (docSnap.exists()) {
+      // Profile image can be in admins or users collection depending on role
+      let docSnap;
+      if (isAdmin) {
+        docSnap = await getDoc(doc(db, 'Admins', user.uid));
+      } else {
+        docSnap = await getDoc(doc(db, 'users', user.uid));
+      }
+      if (docSnap && docSnap.exists()) {
         const data = docSnap.data();
         if (data.profileImage) {
           setImageBase64(data.profileImage);
@@ -103,45 +123,53 @@ export default function ProfileMenu({ navigation }) {
 
   const saveProfileImage = async (base64string) => {
     try {
-      await setDoc(
-        doc(db, 'users', user.uid),
-        { profileImage: base64string },
-        { merge: true }
-      );
+      // Save profile image in the correct collection (Admins or users)
+      if (isAdmin) {
+        await setDoc(
+          doc(db, 'Admins', user.uid),
+          { profileImage: base64string },
+          { merge: true }
+        );
+      } else {
+        await setDoc(
+          doc(db, 'users', user.uid),
+          { profileImage: base64string },
+          { merge: true }
+        );
+      }
       setImageBase64(base64string);
     } catch (err) {
       Alert.alert('Upload error', err.message);
     }
   };
 
- const handleLogout = async () => {
-  Alert.alert(
-    "Confirm Logout",
-    "Are you sure you want to logout?",
-    [
-      {
-        text: "Cancel",
-        onPress: () => console.log("Logout canceled"),
-        style: "cancel",
-      },
-      {
-        text: "Yes, Logout",
-        onPress: async () => {
-          try {
-            await auth.signOut();
-            await AsyncStorage.removeItem('keepLoggedIn');
-            navigation.replace('ProfileMenu');
-          } catch (error) {
-            console.error("Logout error:", error);
-            Alert.alert("Logout Failed", error.message);
-          }
+  const handleLogout = async () => {
+    Alert.alert(
+      'Confirm Logout',
+      'Are you sure you want to logout?',
+      [
+        {
+          text: 'Cancel',
+          onPress: () => console.log('Logout canceled'),
+          style: 'cancel',
         },
-      },
-    ],
-    { cancelable: true }
-  );
-};
-
+        {
+          text: 'Yes, Logout',
+          onPress: async () => {
+            try {
+              await auth.signOut();
+              await AsyncStorage.removeItem('keepLoggedIn');
+              navigation.replace('ProfileMenu');
+            } catch (error) {
+              console.error('Logout error:', error);
+              Alert.alert('Logout Failed', error.message);
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
 
   return (
     <View style={{ flex: 1, paddingTop: 50, alignItems: 'center' }}>

@@ -46,7 +46,7 @@ const TicketFormScreen = () => {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [age, setAge] = useState("");
-  const [gender, setGender] = useState("Male");
+  const [gender, setGender] = useState(""); // ← Start with no gender selected
 
   const auth = getAuth();
   const user = auth.currentUser;
@@ -57,6 +57,11 @@ const TicketFormScreen = () => {
       return;
     }
 
+    if (!gender) {
+      Alert.alert("Missing Info", "Please select a gender.");
+      return;
+    }
+
     if (phone.length !== 10) {
       Alert.alert("Invalid Phone Number", "Phone number must be exactly 10 digits.");
       return;
@@ -64,7 +69,6 @@ const TicketFormScreen = () => {
 
     const seatNumber = selectedSeats[currentIndex];
 
-    // 🔒 Check for duplicate booking before submitting
     try {
       const bookingQuery = query(
         collection(db, "Booking"),
@@ -88,7 +92,6 @@ const TicketFormScreen = () => {
       return;
     }
 
-    // ✅ Update user profile info in 'users' collection
     try {
       await setDoc(
         doc(db, "users", user.uid),
@@ -129,10 +132,9 @@ const TicketFormScreen = () => {
       setName("");
       setPhone("");
       setAge("");
-      setGender("Male");
+      setGender(""); // Reset gender to force re-selection
     } else {
       try {
-        // Save all passengers
         for (let passenger of [...passengers, passengerData]) {
           await addDoc(collection(db, "Booking"), passenger);
         }

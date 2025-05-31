@@ -26,7 +26,7 @@ const Bookyseat = ({ route }) => {
     from,
     to,
     time,
-    BusNo,
+    busNumber,
     travelDate,
   } = route.params || {};
 
@@ -99,7 +99,7 @@ const Bookyseat = ({ route }) => {
       travelDate,
       price,
       time,
-      busNumber: BusNo || null,
+      busNumber: busNumber|| null,
       selectedSeats,
       totalPrice: selectedSeats.length * price,
       userId: user?.uid || "guest",

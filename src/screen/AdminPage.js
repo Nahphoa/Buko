@@ -7,6 +7,7 @@ import {
   Alert,
   ScrollView,
   StyleSheet,
+  Image,
 } from 'react-native';
 import { db } from '../firebaseConfig';
 import {
@@ -204,11 +205,13 @@ export default function AdminPage({ route, navigation }) {
 
   return (
     <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 100 }}>
-      {/* Header with back button */}
+      {/* Header with back button top left */}
       <View style={styles.headerRow}>
-        <TouchableOpacity onPress={() => navigation.navigate('AdminMenu')}>
-          <Ionicons name="arrow-back" size={28} color="black" />
-        </TouchableOpacity>
+        <View style={{ position: 'absolute', left: 0 }}>
+          <TouchableOpacity onPress={() => navigation.navigate('MainTab')}>
+            <Ionicons name="arrow-back" size={28} color="black" />
+          </TouchableOpacity>
+        </View>
         <Text style={styles.title}>ADMIN: {adminSource} ➡️ {adminDestination}</Text>
         <TouchableOpacity onPress={() => setNotifications([])}>
           <Ionicons name="notifications" size={28} color="green" />
@@ -218,6 +221,19 @@ export default function AdminPage({ route, navigation }) {
             </View>
           )}
         </TouchableOpacity>
+      </View>
+
+      {/* Admin Profile */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
+        <Image
+          source={{ uri: 'https://i.pravatar.cc/100?img=5' }}
+          style={{ width: 50, height: 50, borderRadius: 25, marginRight: 10 }}
+        />
+        <View>
+          <Text style={{ fontWeight: 'bold', fontSize: 16 }}>Admin Name</Text>
+          <Text style={{ fontSize: 14, color: '#555' }}>admin@example.com</Text>
+          <Text style={{ fontSize: 14, color: '#555' }}>+91 9876543210</Text>
+        </View>
       </View>
 
       {/* Notification messages */}
@@ -325,6 +341,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 15,
+    position: 'relative',
   },
   title: { fontWeight: 'bold', fontSize: 16, flex: 1, textAlign: 'center' },
   notificationBadge: {

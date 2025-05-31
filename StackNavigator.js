@@ -56,10 +56,10 @@ const StackNavigator = () => {
         <Stack.Screen name="AdminMenu" component={AdminMenu}  options={{title:'Admin Menu'}}/>
          <Stack.Screen name="AdminSign" component={AdminSignup}options={{title:'Admin SignUp'}}/>
          <Stack.Screen name="Histo" component={History} options={{title:'Booking History'}} />
-        <Stack.Screen name="CancelTicket" component={CancelTicketRequestScreen}/>
+        <Stack.Screen name="CancelTicket" component={CancelTicketRequestScreen}options={{title:'Cancel Ticket'}}/>
          <Stack.Screen name="AboutUs" component={AboutUs} />
-         <Stack.Screen name="UpdateTicket" component={UpdateTicket} />
-         <Stack.Screen name="ProfileMenu" component={UpdateTicket} />
+         <Stack.Screen name="UpdateTicket" component={UpdateTicket}options={{title:'Update Ticket'}} />
+         <Stack.Screen name="ProfileMenu" component={ProfileMenu} />
 
       </Stack.Navigator>
     </NavigationContainer>

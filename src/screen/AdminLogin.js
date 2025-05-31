@@ -53,17 +53,18 @@ export default function AdminLogin({ navigation }) {
       Alert.alert('Success', 'Login successful!');
 
       navigation.reset({
-        index: 0,
-        routes: [
-          {
-            name: 'AdminPage',
-            params: {
-              source: adminDoc.source,
-              destination: adminDoc.destination,
-            },
-          },
-        ],
-      });
+  index: 0,
+  routes: [
+    {
+      name: 'AdminPage',
+      params: {
+        source: adminDoc.source,
+        destination: adminDoc.destination,
+      },
+    },
+  ],
+});
+
     } catch (error) {
       Alert.alert('Login Error', error.message);
     }
@@ -138,8 +139,9 @@ export default function AdminLogin({ navigation }) {
         />
       </View>
 
-      <TouchableOpacity style={styles.loginBtn} onPress={() => navigation.navigate('AdminPage')}>
+      <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
         <Text style={styles.loginText}>Log In</Text>
+
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => navigation.navigate('AdminSign')}>

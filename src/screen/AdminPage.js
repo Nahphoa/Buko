@@ -24,7 +24,13 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 
 export default function AdminPage({ route, navigation }) {
-  const { source: adminSource, destination: adminDestination } = route.params;
+  const { source, destination } = route.params ?? {};
+
+  React.useEffect(() => {
+    if (!source || !destination) {
+      console.warn('Missing source or destination params');
+    }
+  }, [source, destination]);
 
   const [busName, setBusName] = useState('');
   const [busNumber, setBusNumber] = useState('');
@@ -45,7 +51,7 @@ export default function AdminPage({ route, navigation }) {
       .map((doc) => ({ id: doc.id, ...doc.data() }))
       .filter(
         (bus) =>
-          bus.source === adminSource && bus.destination === adminDestination
+          bus.source === source && bus.destination === destination
       );
     setBuses(filtered);
   };
@@ -53,8 +59,8 @@ export default function AdminPage({ route, navigation }) {
   const fetchCancelRequests = () => {
     const q = query(
       collection(db, 'CancelRequests'),
-      where('source', '==', adminSource),
-      where('destination', '==', adminDestination),
+      where('source', '==', source),
+      where('destination', '==', destination),
       where('status', '==', 'pending')
     );
 
@@ -73,8 +79,8 @@ export default function AdminPage({ route, navigation }) {
         .map((doc) => ({ id: doc.id, ...doc.data() }))
         .filter(
           (booking) =>
-            booking.from === adminSource &&
-            booking.to === adminDestination
+            booking.from === source &&
+            booking.to === destination
         );
 
       if (updatedBookings.length > bookings.length) {
@@ -96,7 +102,7 @@ export default function AdminPage({ route, navigation }) {
       unsubscribeBookings();
       unsubscribeCancelRequests();
     };
-  }, []);
+  }, [source, destination]);
 
   const clearFields = () => {
     setBusName('');
@@ -117,8 +123,8 @@ export default function AdminPage({ route, navigation }) {
     const busData = {
       busName,
       busNumber,
-      source: adminSource,
-      destination: adminDestination,
+      source: source,
+      destination: destination,
       time,
       price: parseFloat(price),
       totalSeats: parseInt(totalSeats),
@@ -167,6 +173,7 @@ export default function AdminPage({ route, navigation }) {
     setTotalSeats(bus.totalSeats.toString());
     setSeatsAvailable(bus.seatsAvailable.toString());
     setEditId(bus.id);
+    setShowBusForm(true);
   };
 
   const handleApproveCancelRequest = async (request) => {
@@ -175,8 +182,8 @@ export default function AdminPage({ route, navigation }) {
         collection(db, 'Booking'),
         where('name', '==', request.passengerName),
         where('phone', '==', request.phone),
-        where('from', '==', adminSource),
-        where('to', '==', adminDestination)
+        where('from', '==', source),
+        where('to', '==', destination)
       );
       const bookingSnapshot = await getDocs(q);
 
@@ -204,129 +211,182 @@ export default function AdminPage({ route, navigation }) {
   };
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 100 }}>
-      {/* Header with back button top left */}
-      <View style={styles.headerRow}>
-        <View style={{ position: 'absolute', left: 0 }}>
-          <TouchableOpacity onPress={() => navigation.navigate('MainTab')}>
-            <Ionicons name="arrow-back" size={28} color="black" />
-          </TouchableOpacity>
-        </View>
-        <Text style={styles.title}>ADMIN: {adminSource} ➡️ {adminDestination}</Text>
-        <TouchableOpacity onPress={() => setNotifications([])}>
-          <Ionicons name="notifications" size={28} color="green" />
-          {notifications.length > 0 && (
-            <View style={styles.notificationBadge}>
-              <Text style={{ color: 'white', fontSize: 10 }}>{notifications.length}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-      </View>
+    <ScrollView contentContainerStyle={styles.container}>
+     <TouchableOpacity onPress={() => {
+  if (navigation.canGoBack()) {
+    navigation.goBack();
+  } else {
+    // Optional: handle the case where you can't go back
+    navigation.navigate('MainTab'); // or any other default screen
+  }
+}}>
+  <Ionicons name="arrow-back" size={28} color="#333" />
+</TouchableOpacity>
+
 
       {/* Admin Profile */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
+      <View style={styles.adminProfile}>
         <Image
           source={{ uri: 'https://i.pravatar.cc/100?img=5' }}
-          style={{ width: 50, height: 50, borderRadius: 25, marginRight: 10 }}
+          style={styles.adminAvatar}
         />
-        <View>
-          <Text style={{ fontWeight: 'bold', fontSize: 16 }}>Admin Name</Text>
-          <Text style={{ fontSize: 14, color: '#555' }}>admin@example.com</Text>
-          <Text style={{ fontSize: 14, color: '#555' }}>+91 9876543210</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.adminName}>Admin Name</Text>
+          <Text style={styles.adminInfo}>admin@example.com</Text>
+          <Text style={styles.adminInfo}>+91 9876543210</Text>
         </View>
       </View>
 
-      {/* Notification messages */}
+      {/* Notifications */}
       {notifications.length > 0 && (
         <View style={styles.notificationBox}>
           {notifications.map((note, idx) => (
-            <Text key={idx}>{note}</Text>
+            <Text key={idx} style={styles.notificationText}>{note}</Text>
           ))}
           <TouchableOpacity style={styles.okButton} onPress={() => setNotifications([])}>
-            <Text style={{ color: 'white' }}>OK</Text>
+            <Text style={styles.okButtonText}>OK</Text>
           </TouchableOpacity>
         </View>
       )}
 
-      {/* Add Bus Form Toggle */}
+      {/* Bus Form Toggle */}
       <TouchableOpacity
         style={styles.addBusButton}
         onPress={() => setShowBusForm(!showBusForm)}
       >
-        <Text style={styles.buttonText}>{showBusForm ? 'Hide Add Bus' : 'Add Bus'}</Text>
+        <Text style={styles.buttonText}>{showBusForm ? 'Hide Bus Form' : 'Add Bus'}</Text>
       </TouchableOpacity>
 
       {/* Bus Form */}
       {showBusForm && (
-        <View>
+        <View style={styles.busForm}>
           <TextInput style={styles.input} placeholder="Bus Name" value={busName} onChangeText={setBusName} />
           <TextInput style={styles.input} placeholder="Bus Number" value={busNumber} onChangeText={setBusNumber} />
-          <TextInput style={styles.input} placeholder="Time (HH:MM AM/PM)" value={time} onChangeText={setTime} />
-          <TextInput style={styles.input} placeholder="Price" value={price} keyboardType="numeric" onChangeText={setPrice} />
-          <TextInput style={styles.input} placeholder="Total Seats" value={totalSeats} keyboardType="numeric" onChangeText={setTotalSeats} />
-          <TextInput style={styles.input} placeholder="Seats Available" value={seatsAvailable} keyboardType="numeric" onChangeText={setSeatsAvailable} />
-
-          <TouchableOpacity style={styles.addBusButton} onPress={handleAddOrUpdate}>
-            <Text style={styles.buttonText}>{editId ? 'Update Bus' : 'Add Bus'}</Text>
-          </TouchableOpacity>
+          <TextInput style={styles.input} placeholder="Time" value={time} onChangeText={setTime} />
+          <TextInput
+            style={styles.input}
+            placeholder="Price"
+            value={price}
+            onChangeText={setPrice}
+            keyboardType="numeric"
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Total Seats"
+            value={totalSeats}
+            onChangeText={setTotalSeats}
+            keyboardType="numeric"
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Seats Available"
+            value={seatsAvailable}
+            onChangeText={setSeatsAvailable}
+            keyboardType="numeric"
+          />
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
+            <TouchableOpacity style={styles.addBusButton} onPress={handleAddOrUpdate}>
+              <Text style={styles.buttonText}>{editId ? 'Update Bus' : 'Add Bus'}</Text>
+            </TouchableOpacity>
+            {editId && (
+              <TouchableOpacity
+                style={[styles.addBusButton, styles.cancelButton]}
+                onPress={clearFields}
+              >
+                <Text style={styles.buttonText}>Cancel</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
       )}
 
-      {/* Bus List */}
-      <Text style={styles.sectionTitle}>Buses:</Text>
-      {buses.length === 0 && <Text>No buses available.</Text>}
+      {/* Buses Section */}
+      <Text style={styles.sectionTitle}>Buses</Text>
+      {buses.length === 0 && <Text style={styles.emptyText}>No buses found for this route.</Text>}
       {buses.map((bus) => (
-        <View key={bus.id} style={styles.listItem}>
-          <Text style={{ fontWeight: 'bold' }}>{bus.busName} ({bus.busNumber})</Text>
-          <Text>Time: {bus.time}</Text>
-          <Text>Price: ₹{bus.price}</Text>
-          <Text>Seats: {bus.seatsAvailable}/{bus.totalSeats}</Text>
-          <View style={styles.row}>
-            <TouchableOpacity onPress={() => handleEdit(bus)}>
-              <Ionicons name="create-outline" size={24} color="blue" />
+        <View key={bus.id} style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.busName}>{bus.busName}</Text>
+            <Text style={styles.busNumber}>{bus.busNumber}</Text>
+          </View>
+          <Text><Text style={styles.boldText}>Time:</Text> {bus.time}</Text>
+          <Text><Text style={styles.boldText}>Price:</Text> ₹{bus.price}</Text>
+          <Text><Text style={styles.boldText}>Seats:</Text> {bus.seatsAvailable} / {bus.totalSeats}</Text>
+
+          <View style={styles.cardActions}>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.editButton]}
+              onPress={() => handleEdit(bus)}
+            >
+              <Ionicons name="create-outline" size={20} color="#fff" />
+              <Text style={styles.actionText}>Edit</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => handleDeleteBus(bus.id)}>
-              <Ionicons name="trash-outline" size={24} color="red" />
+            <TouchableOpacity
+              style={[styles.actionButton, styles.deleteButton]}
+              onPress={() =>
+                Alert.alert('Confirm Delete', 'Are you sure you want to delete this bus?', [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Delete', style: 'destructive', onPress: () => handleDeleteBus(bus.id) },
+                ])
+              }
+            >
+              <Ionicons name="trash-outline" size={20} color="#fff" />
+              <Text style={styles.actionText}>Delete</Text>
             </TouchableOpacity>
           </View>
         </View>
       ))}
 
-      {/* Bookings */}
-      <Text style={styles.sectionTitle}>User Bookings:</Text>
-      {bookings.length === 0 && <Text>No bookings yet.</Text>}
+      {/* Bookings Section */}
+      <Text style={styles.sectionTitle}>Bookings</Text>
+      {bookings.length === 0 && <Text style={styles.emptyText}>No bookings found for this route.</Text>}
       {bookings.map((booking) => (
-        <View key={booking.id} style={styles.listItem}>
-          <Text style={{ fontWeight: 'bold' }}>{booking.busName || booking.busNumber}</Text>
-          <Text>Passenger: {booking.name}</Text>
-          <Text>Seat: {booking.seat}</Text>
-          <Text>Date: {booking.date}</Text>
-          <Text>Time: {booking.time}</Text>
-          <TouchableOpacity onPress={() => handleDeleteBooking(booking.id)}>
-            <Ionicons name="trash-outline" size={24} color="red" />
-          </TouchableOpacity>
+        <View key={booking.id} style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.passengerName}>{booking.name}</Text>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.deleteButtonSmall]}
+              onPress={() =>
+                Alert.alert('Confirm Delete', 'Delete this booking?', [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Delete', style: 'destructive', onPress: () => handleDeleteBooking(booking.id) },
+                ])
+              }
+            >
+              <Ionicons name="trash-outline" size={20} color="#fff" />
+            </TouchableOpacity>
+          </View>
+          <Text>Passenger Name: {booking.username || "Unknown"}</Text>
+          <Text><Text style={styles.boldText}>Seat Number:</Text> {booking.seatNumber}</Text>
+          <Text>Travel Date: {booking.travelDate || "Not Provided"}</Text>
+          <Text><Text style={styles.boldText}>Bus:</Text> {booking.busName || 'N/A'} ({booking.busNumber || 'N/A'})</Text>
+          <Text><Text style={styles.boldText}>Phone:</Text> {booking.phone || 'N/A'}</Text>
         </View>
       ))}
 
-      {/* Cancel Requests */}
-      <Text style={styles.sectionTitle}>Cancel Ticket Requests:</Text>
-      {cancelRequests.length === 0 && <Text>No cancel requests.</Text>}
+      {/* Cancel Requests Section */}
+      <Text style={styles.sectionTitle}>Cancel Requests</Text>
+      {cancelRequests.length === 0 && <Text style={styles.emptyText}>No pending cancel requests.</Text>}
       {cancelRequests.map((request) => (
-        <View key={request.id} style={styles.cancelRequestItem}>
-          <Text style={{ fontWeight: 'bold' }}>Passenger: {request.passengerName}</Text>
-          <Text>Phone: {request.phone}</Text>
-          <View style={styles.row}>
+        <View key={request.id} style={styles.card}>
+          <Text style={styles.passengerName}>{request.passengerName}</Text>
+          <Text><Text style={styles.boldText}>Phone:</Text> {request.phone}</Text>
+          <Text><Text style={styles.boldText}>Seat Number:</Text> {request.seatNumber}</Text>
+
+          <View style={styles.cardActions}>
             <TouchableOpacity
-              style={[styles.approveButton]}
+              style={[styles.actionButton, styles.approveButton]}
               onPress={() => handleApproveCancelRequest(request)}
             >
-              <Text style={{ color: 'white' }}>Approve</Text>
+              <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
+              <Text style={styles.actionText}>Approve</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.rejectButton]}
+              style={[styles.actionButton, styles.rejectButton]}
               onPress={() => handleRejectCancelRequest(request.id)}
             >
-              <Text style={{ color: 'white' }}>Reject</Text>
+              <Ionicons name="close-circle-outline" size={20} color="#fff" />
+              <Text style={styles.actionText}>Reject</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -336,89 +396,229 @@ export default function AdminPage({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
+  container: {
+    padding: 20,
+    paddingBottom: 40,
+    backgroundColor: '#f7f8fa',
+  },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 15,
-    position: 'relative',
   },
-  title: { fontWeight: 'bold', fontSize: 16, flex: 1, textAlign: 'center' },
-  notificationBadge: {
-    backgroundColor: 'red',
-    borderRadius: 10,
-    paddingHorizontal: 5,
-    position: 'absolute',
-    right: -6,
-    top: -4,
-  },
-  notificationBox: {
-    backgroundColor: '#e7f3fe',
-    padding: 10,
-    marginVertical: 10,
-    borderRadius: 6,
-  },
-  okButton: {
-    backgroundColor: 'green',
-    padding: 6,
-    borderRadius: 5,
-    marginTop: 8,
-    alignSelf: 'flex-start',
-  },
-  addBusButton: {
-    backgroundColor: '#800080',
-    padding: 10,
-    marginVertical: 10,
-    borderRadius: 6,
-    alignItems: 'center',
-  },
-  buttonText: { color: 'white', fontWeight: 'bold' },
-  input: {
-    borderWidth: 1,
-    borderColor: '#999',
-    borderRadius: 6,
-    padding: 8,
-    marginVertical: 6,
-  },
-  sectionTitle: {
-    fontSize: 16,
+  title: {
     fontWeight: 'bold',
-    marginTop: 15,
-    marginBottom: 6,
+    fontSize: 20,
+    color: '#333',
   },
-  listItem: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 10,
-    marginVertical: 5,
-    borderRadius: 6,
+  notificationBadge: {
+    backgroundColor: '#e74c3c',
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    position: 'absolute',
+    top: -5,
+    right: -10,
+    minWidth: 18,
+    alignItems: 'center',
   },
-  row: {
+  notificationBadgeText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+    adminProfile: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 6,
+    alignItems: 'center',
+    marginBottom: 20,
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 3,
   },
-  cancelRequestItem: {
+
+  adminAvatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginRight: 15,
+  },
+
+  adminName: {
+    fontWeight: 'bold',
+    fontSize: 18,
+    color: '#222',
+  },
+
+  adminInfo: {
+    color: '#666',
+    fontSize: 14,
+    marginTop: 2,
+  },
+
+  notificationBox: {
+    backgroundColor: '#fff3cd',
+    borderColor: '#ffeeba',
     borderWidth: 1,
-    borderColor: '#ff6666',
-    backgroundColor: '#ffe6e6',
-    padding: 10,
-    marginVertical: 5,
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 15,
+  },
+
+  notificationText: {
+    color: '#856404',
+    fontSize: 14,
+    marginBottom: 5,
+  },
+
+  okButton: {
+    backgroundColor: '#856404',
+    alignSelf: 'flex-end',
+    paddingVertical: 6,
+    paddingHorizontal: 15,
+    borderRadius: 20,
+  },
+
+  okButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+
+  addBusButton: {
+    backgroundColor: '#4CAF50',
+    paddingVertical: 12,
+    borderRadius: 10,
+    marginVertical: 10,
+    alignItems: 'center',
+  },
+
+  buttonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+
+  busForm: {
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+
+  input: {
+    borderColor: '#ddd',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 10,
+    fontSize: 16,
+  },
+
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginVertical: 15,
+    color: '#333',
+  },
+
+  emptyText: {
+    color: '#888',
+    fontStyle: 'italic',
+  },
+
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+
+  busName: {
+    fontWeight: 'bold',
+    fontSize: 18,
+    color: '#2c3e50',
+  },
+
+  busNumber: {
+    fontWeight: '600',
+    fontSize: 16,
+    color: '#34495e',
+  },
+
+  passengerName: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    color: '#34495e',
+  },
+
+  boldText: {
+    fontWeight: '600',
+    color: '#555',
+  },
+
+  cardActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 12,
+  },
+
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginLeft: 10,
+  },
+
+  actionText: {
+    color: '#fff',
+    marginLeft: 6,
+    fontWeight: '600',
+  },
+
+  editButton: {
+    backgroundColor: '#3498db',
+  },
+
+  deleteButton: {
+    backgroundColor: '#e74c3c',
+  },
+
+  deleteButtonSmall: {
+    backgroundColor: '#e74c3c',
+    padding: 6,
     borderRadius: 6,
   },
+
   approveButton: {
-    backgroundColor: 'green',
-    padding: 8,
-    borderRadius: 6,
-    flex: 1,
-    marginRight: 8,
-    alignItems: 'center',
+    backgroundColor: '#27ae60',
   },
+
   rejectButton: {
-    backgroundColor: 'red',
-    padding: 8,
-    borderRadius: 6,
-    flex: 1,
-    alignItems: 'center',
+    backgroundColor: '#c0392b',
   },
 });

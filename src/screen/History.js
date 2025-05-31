@@ -5,35 +5,42 @@ import { collection, getDocs, deleteDoc, doc, query, where } from 'firebase/fire
 
 const History = () => {
   const [bookings, setBookings] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchBookings = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        setBookings([]);
+        return;
+      }
+
+      const q = query(collection(db, "Booking"), where("userId", "==", user.uid));
+      const querySnapshot = await getDocs(q);
+
+      const fetched = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          ticket_id: doc.id,
+          ...data
+        };
+      });
+
+      setBookings(fetched);
+    } catch (error) {
+      console.error("Error fetching bookings:", error);
+    }
+  };
 
   useEffect(() => {
-    const fetchBookings = async () => {
-      try {
-        const user = auth.currentUser;
-        if (!user) {
-          setBookings([]);
-          return;
-        }
-
-        const q = query(collection(db, "Booking"), where("userId", "==", user.uid));
-        const querySnapshot = await getDocs(q);
-
-        const fetched = querySnapshot.docs.map(doc => {
-          const data = doc.data();
-          return {
-            ticket_id: doc.id,
-            ...data
-          };
-        });
-
-        setBookings(fetched);
-      } catch (error) {
-        console.error("Error fetching bookings:", error);
-      }
-    };
-
     fetchBookings();
   }, []);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchBookings();
+    setRefreshing(false);
+  };
 
   const handleDelete = (ticketId) => {
     Alert.alert(
@@ -112,7 +119,11 @@ const History = () => {
         data={bookings}
         keyExtractor={(item) => item.ticket_id}
         renderItem={renderItem}
-        ListEmptyComponent={<Text style={{ textAlign: 'center', marginTop: 20 }}>No bookings found.</Text>}
+        refreshing={refreshing}
+        onRefresh={handleRefresh}
+        ListEmptyComponent={
+          <Text style={{ textAlign: 'center', marginTop: 20 }}>No bookings found.</Text>
+        }
       />
     </View>
   );

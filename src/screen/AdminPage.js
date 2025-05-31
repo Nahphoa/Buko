@@ -22,7 +22,7 @@ import {
 } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
 
-export default function AdminPage({ route }) {
+export default function AdminPage({ route, navigation }) {
   const { source: adminSource, destination: adminDestination } = route.params;
 
   const [busName, setBusName] = useState('');
@@ -36,11 +36,8 @@ export default function AdminPage({ route }) {
   const [bookings, setBookings] = useState([]);
   const [showBusForm, setShowBusForm] = useState(false);
   const [notifications, setNotifications] = useState([]);
-
-  // New state for cancel requests
   const [cancelRequests, setCancelRequests] = useState([]);
 
-  // Fetch buses
   const fetchBuses = async () => {
     const snapshot = await getDocs(collection(db, 'buses'));
     const filtered = snapshot.docs
@@ -52,7 +49,6 @@ export default function AdminPage({ route }) {
     setBuses(filtered);
   };
 
-  // Fetch cancel requests filtered by route
   const fetchCancelRequests = () => {
     const q = query(
       collection(db, 'CancelRequests'),
@@ -70,7 +66,6 @@ export default function AdminPage({ route }) {
     });
   };
 
-  // Fetch bookings and setup notification listener
   useEffect(() => {
     const unsubscribeBookings = onSnapshot(collection(db, 'Booking'), (snapshot) => {
       const updatedBookings = snapshot.docs
@@ -81,7 +76,6 @@ export default function AdminPage({ route }) {
             booking.to === adminDestination
         );
 
-      // Detect new bookings
       if (updatedBookings.length > bookings.length) {
         setNotifications((prev) => [
           ...prev,
@@ -174,37 +168,30 @@ export default function AdminPage({ route }) {
     setEditId(bus.id);
   };
 
-  // New: Approve cancel request
   const handleApproveCancelRequest = async (request) => {
     try {
-      // Find booking matching passenger and route info
       const q = query(
         collection(db, 'Booking'),
         where('name', '==', request.passengerName),
-        where('phone', '==', request.phone), // assuming phone stored in booking
+        where('phone', '==', request.phone),
         where('from', '==', adminSource),
         where('to', '==', adminDestination)
       );
       const bookingSnapshot = await getDocs(q);
 
-      // Delete all matching bookings (usually one)
       bookingSnapshot.forEach(async (docSnap) => {
         await deleteDoc(doc(db, 'Booking', docSnap.id));
       });
 
-      // Remove cancel request document
       await deleteDoc(doc(db, 'CancelRequests', request.id));
 
       Alert.alert('Success', `Cancelled ticket for ${request.passengerName}`);
-
-      // Remove request from local state
       setCancelRequests((prev) => prev.filter((r) => r.id !== request.id));
     } catch (error) {
       Alert.alert('Error', 'Failed to approve cancel request: ' + error.message);
     }
   };
 
-  // New: Reject cancel request (just delete the request)
   const handleRejectCancelRequest = async (requestId) => {
     try {
       await deleteDoc(doc(db, 'CancelRequests', requestId));
@@ -217,8 +204,11 @@ export default function AdminPage({ route }) {
 
   return (
     <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 100 }}>
-      {/* Header */}
+      {/* Header with back button */}
       <View style={styles.headerRow}>
+        <TouchableOpacity onPress={() => navigation.navigate('AdminMenu')}>
+          <Ionicons name="arrow-back" size={28} color="black" />
+        </TouchableOpacity>
         <Text style={styles.title}>ADMIN: {adminSource} ➡️ {adminDestination}</Text>
         <TouchableOpacity onPress={() => setNotifications([])}>
           <Ionicons name="notifications" size={28} color="green" />
@@ -242,7 +232,7 @@ export default function AdminPage({ route }) {
         </View>
       )}
 
-      {/* Add Bus Section */}
+      {/* Add Bus Form Toggle */}
       <TouchableOpacity
         style={styles.addBusButton}
         onPress={() => setShowBusForm(!showBusForm)}
@@ -250,6 +240,7 @@ export default function AdminPage({ route }) {
         <Text style={styles.buttonText}>{showBusForm ? 'Hide Add Bus' : 'Add Bus'}</Text>
       </TouchableOpacity>
 
+      {/* Bus Form */}
       {showBusForm && (
         <View>
           <TextInput style={styles.input} placeholder="Bus Name" value={busName} onChangeText={setBusName} />
@@ -285,7 +276,7 @@ export default function AdminPage({ route }) {
         </View>
       ))}
 
-      {/* Bookings List */}
+      {/* Bookings */}
       <Text style={styles.sectionTitle}>User Bookings:</Text>
       {bookings.length === 0 && <Text>No bookings yet.</Text>}
       {bookings.map((booking) => (
@@ -301,7 +292,7 @@ export default function AdminPage({ route }) {
         </View>
       ))}
 
-      {/* Cancel Ticket Requests */}
+      {/* Cancel Requests */}
       <Text style={styles.sectionTitle}>Cancel Ticket Requests:</Text>
       {cancelRequests.length === 0 && <Text>No cancel requests.</Text>}
       {cancelRequests.map((request) => (
@@ -329,8 +320,13 @@ export default function AdminPage({ route }) {
 }
 
 const styles = StyleSheet.create({
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
-  title: { fontWeight: 'bold', fontSize: 18 },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  title: { fontWeight: 'bold', fontSize: 16, flex: 1, textAlign: 'center' },
   notificationBadge: {
     backgroundColor: 'red',
     borderRadius: 10,
@@ -353,7 +349,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   addBusButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#800080',
     padding: 10,
     marginVertical: 10,
     borderRadius: 6,

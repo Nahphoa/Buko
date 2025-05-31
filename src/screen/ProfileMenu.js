@@ -46,8 +46,8 @@ export default function ProfileMenu({ navigation }) {
       const docSnap = await getDoc(doc(db, 'users', user.uid));
       if (docSnap.exists()) {
         const data = docSnap.data();
-        if (data.name) setUserName(data.name);
-        if (data.phone) setPhone(data.phone);
+        if (data.username) setUserName(data.username);
+        if (data.phoneNumber) setPhone(data.phoneNumber);
       }
     } catch (err) {
       console.error('Error fetching user data:', err.message);

@@ -10,7 +10,15 @@ import {
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { db } from "../firebaseConfig";
-import { collection, addDoc, query, where, getDocs } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  query,
+  where,
+  getDocs,
+  doc,
+  setDoc,
+} from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 const genders = ["Male", "Female", "Other"];
@@ -80,6 +88,20 @@ const TicketFormScreen = () => {
       return;
     }
 
+    // ✅ Update user profile info in 'users' collection
+    try {
+      await setDoc(
+        doc(db, "users", user.uid),
+        {
+          name,
+          phone,
+        },
+        { merge: true }
+      );
+    } catch (error) {
+      console.error("Error saving user profile info:", error);
+    }
+
     const passengerData = {
       busId,
       busName,
@@ -110,7 +132,7 @@ const TicketFormScreen = () => {
       setGender("Male");
     } else {
       try {
-        // Save all passengers (already verified)
+        // Save all passengers
         for (let passenger of [...passengers, passengerData]) {
           await addDoc(collection(db, "Booking"), passenger);
         }
@@ -183,11 +205,7 @@ const TicketFormScreen = () => {
       </View>
 
       <Button
-        title={
-          currentIndex + 1 < selectedSeats.length
-            ? "Next"
-            : "Confirm Booking"
-        }
+        title={currentIndex + 1 < selectedSeats.length ? "Next" : "Confirm Booking"}
         onPress={handleSubmit}
         color="#800080"
       />

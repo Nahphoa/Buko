@@ -26,6 +26,11 @@ const SignUpScreen = ({ navigation }) => {
       return;
     }
 
+    if (phoneNumber.length !== 10) {
+      Alert.alert("Error", "Phone number must be exactly 10 digits.");
+      return;
+    }
+
     if (password.length < 6) {
       Alert.alert("Error", "Password must be at least 6 characters.");
       return;
@@ -109,16 +114,20 @@ const SignUpScreen = ({ navigation }) => {
           />
         </View>
 
-        {/* Phone Number */}
+        {/* Phone Number (10 digit only) */}
         <View style={styles.inputContainer}>
           <Ionicons name="call-outline" size={24} color="#003580" style={styles.icon} />
           <TextInput
             style={styles.textInput}
             placeholder="Enter your phone number"
             placeholderTextColor="#000000"
-            keyboardType="phone-pad"
+            keyboardType="number-pad"
             value={phoneNumber}
-            onChangeText={setPhoneNumber}
+            maxLength={10}
+            onChangeText={(text) => {
+              const cleaned = text.replace(/[^0-9]/g, '').slice(0, 10);
+              setPhoneNumber(cleaned);
+            }}
           />
         </View>
 
@@ -171,7 +180,7 @@ const SignUpScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-        {/* ✅ Sign Up Button */}
+        {/* Sign Up Button */}
         <TouchableOpacity style={styles.button} onPress={handleEmailSignUp}>
           <Text style={styles.buttonText}>Sign Up</Text>
         </TouchableOpacity>
@@ -191,6 +200,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+    marginTop:-39,
   },
   scrollContainer: {
     padding: 20,

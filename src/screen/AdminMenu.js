@@ -4,9 +4,9 @@ import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 export default function AdminMenu({ navigation }) {
   return (
     <View style={styles.container}>
-      {/* Logo at top center */}
+    
       <Image
-        source={require('../Image/logo.png')} // Replace with your logo path
+        source={require('../Image/logo.png')} 
         style={styles.logo}
         resizeMode="contain"
       />
@@ -24,7 +24,7 @@ export default function AdminMenu({ navigation }) {
         onPress={() => navigation.navigate('AdminSign')}
         style={[styles.button, { borderColor: 'navy' }]}
       >
-        <Text style={[styles.buttonText, { color: 'Navy' }]}>Admin SignUp</Text>
+        <Text style={[styles.buttonText, { color: 'navy' }]}>Admin SignUp</Text>
       </TouchableOpacity>
     </View>
   );

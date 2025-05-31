@@ -45,16 +45,16 @@ const StackNavigator = () => {
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="SignUp" component={SignUpScreen} />
 
-        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{title:'Forgot Password'}}/>
         <Stack.Screen name="SelectRoute" component={SelectRouteScreen} />
 
         <Stack.Screen name="BusList" component={BusListScreen} />
         <Stack.Screen name="Bookyseat" component={Bookyseat} />
         <Stack.Screen name="TicketForm" component={TicketFormScreen} />
-        <Stack.Screen name="AdminLog" component={AdminLogin} />
-        <Stack.Screen name="AdminPage" component={AdminPage} />
-        <Stack.Screen name="AdminMenu" component={AdminMenu}/>
-         <Stack.Screen name="AdminSign" component={AdminSignup}/>
+        <Stack.Screen name="AdminLog" component={AdminLogin} options={{title:'Admin Login'}} />
+        <Stack.Screen name="AdminPage" component={AdminPage}  options={{title:'Admin Panel'}}/>
+        <Stack.Screen name="AdminMenu" component={AdminMenu}  options={{title:'Admin Menu'}}/>
+         <Stack.Screen name="AdminSign" component={AdminSignup}options={{title:'Admin SignUp'}}/>
          <Stack.Screen name="Histo" component={History} options={{title:'Booking History'}} />
         <Stack.Screen name="CancelTicket" component={CancelTicketRequestScreen}/>
          <Stack.Screen name="AboutUs" component={AboutUs} />

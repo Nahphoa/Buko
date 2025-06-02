@@ -8,6 +8,7 @@ import {
   ScrollView,
   Alert,
   Image,
+  RefreshControl,
 } from 'react-native';
 import { auth, db } from '../firebaseConfig';
 import { signInWithEmailAndPassword } from 'firebase/auth';
@@ -21,6 +22,7 @@ export default function AdminLogin({ navigation }) {
   const [destination, setDestination] = useState('');
   const [adminKey, setAdminKey] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password || !source || !destination || !adminKey) {
@@ -53,27 +55,44 @@ export default function AdminLogin({ navigation }) {
       Alert.alert('Success', 'Login successful!');
 
       navigation.reset({
-  index: 0,
-  routes: [
-    {
-      name: 'AdminPage',
-      params: {
-        source: adminDoc.source,
-        destination: adminDoc.destination,
-      },
-    },
-  ],
-});
+        index: 0,
+        routes: [
+          {
+            name: 'AdminPage',
+            params: {
+              source: adminDoc.source,
+              destination: adminDoc.destination,
+            },
+          },
+        ],
+      });
 
     } catch (error) {
       Alert.alert('Login Error', error.message);
     }
   };
 
+  const onRefresh = () => {
+    setRefreshing(true);
+    // Clear all input fields
+    setEmail('');
+    setPassword('');
+    setSource('');
+    setDestination('');
+    setAdminKey('');
+    setShowPassword(false);
+    setTimeout(() => setRefreshing(false), 1000);
+  };
+
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView
+      contentContainerStyle={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
       <Image
-        source={require('../Image/logo.png')} // <-- Add your logo here
+        source={require('../Image/logo.png')}
         style={styles.logo}
       />
 
@@ -141,7 +160,6 @@ export default function AdminLogin({ navigation }) {
 
       <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
         <Text style={styles.loginText}>Log In</Text>
-
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => navigation.navigate('AdminSign')}>

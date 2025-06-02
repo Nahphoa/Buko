@@ -21,6 +21,7 @@ import UpdateTicket from './src/screen/UpdateTicket';
 import AdminPage from './src/screen/AdminPage'; 
 import AdminMenu from './src/screen/AdminMenu.js';
 import ProfileMenu from './src/screen/ProfileMenu.js';
+import Payment from './src/screen/Payment.js';
 
 // import AuthLoading from './AuthLoading';
 
@@ -60,6 +61,7 @@ const StackNavigator = () => {
          <Stack.Screen name="AboutUs" component={AboutUs} />
          <Stack.Screen name="UpdateTicket" component={UpdateTicket}options={{title:'Update Ticket'}} />
          <Stack.Screen name="ProfileMenu" component={ProfileMenu} />
+         <Stack.Screen name="Payment" component={Payment}/>
 
       </Stack.Navigator>
     </NavigationContainer>

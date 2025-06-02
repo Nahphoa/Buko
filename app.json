@@ -23,7 +23,7 @@
       "package": "in.buko"
     },
     "web": {
-      "favicon": "./assets/favicon.ico"
+      "favicon": "./assets/favicon.png" 
     },
     "plugins": [
       "expo-asset"

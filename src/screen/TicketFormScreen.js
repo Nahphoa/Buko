@@ -5,8 +5,7 @@ import {
   TextInput,
   Button,
   StyleSheet,
-  Alert,
-  TouchableOpacity,
+  TouchableOpacity,Alert
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { db } from "../firebaseConfig";
@@ -51,104 +50,116 @@ const TicketFormScreen = () => {
   const auth = getAuth();
   const user = auth.currentUser;
 
-  const handleSubmit = async () => {
-    if (!name || !phone || !age) {
-      Alert.alert("Missing Info", "Please fill in all the fields.");
+ const handleSubmit = async () => {
+  if (!name || !phone || !age) {
+    Alert.alert("Missing Info", "Please fill in all the fields.");
+    return;
+  }
+
+  if (!gender) {
+    Alert.alert("Missing Info", "Please select a gender.");
+    return;
+  }
+
+  if (phone.length !== 10) {
+    Alert.alert(
+      "Invalid Phone Number",
+      "Phone number must be exactly 10 digits."
+    );
+    return;
+  }
+
+  const seatNumber = selectedSeats[currentIndex];
+
+  try {
+    const bookingQuery = query(
+      collection(db, "Booking"),
+      where("userId", "==", user?.uid || null),
+      where("seatNumber", "==", seatNumber),
+      where("travelDate", "==", travelDate),
+      where("busId", "==", busId)
+    );
+
+    const querySnapshot = await getDocs(bookingQuery);
+    // Removed alert for duplicate booking, just return to avoid duplicate
+    if (!querySnapshot.empty) {
       return;
     }
+  } catch (error) {
+    console.error("Error checking for duplicates:", error);
+    // Removed alert, just stop execution on error
+    return;
+  }
 
-    if (!gender) {
-      Alert.alert("Missing Info", "Please select a gender.");
-      return;
-    }
+  try {
+    await setDoc(
+      doc(db, "users", user.uid),
+      {
+        name,
+        phone,
+      },
+      { merge: true }
+    );
+  } catch (error) {
+    console.error("Error saving user profile info:", error);
+  }
 
-    if (phone.length !== 10) {
-      Alert.alert("Invalid Phone Number", "Phone number must be exactly 10 digits.");
-      return;
-    }
-
-    const seatNumber = selectedSeats[currentIndex];
-
-    try {
-      const bookingQuery = query(
-        collection(db, "Booking"),
-        where("userId", "==", user?.uid || null),
-        where("seatNumber", "==", seatNumber),
-        where("travelDate", "==", travelDate),
-        where("busId", "==", busId)
-      );
-
-      const querySnapshot = await getDocs(bookingQuery);
-      if (!querySnapshot.empty) {
-        Alert.alert(
-          "Duplicate Booking",
-          `Seat ${seatNumber} is already booked for you on this bus and date.`
-        );
-        return;
-      }
-    } catch (error) {
-      console.error("Error checking for duplicates:", error);
-      Alert.alert("Error", "Unable to check for duplicate booking.");
-      return;
-    }
-
-    try {
-      await setDoc(
-        doc(db, "users", user.uid),
-        {
-          name,
-          phone,
-        },
-        { merge: true }
-      );
-    } catch (error) {
-      console.error("Error saving user profile info:", error);
-    }
-
-    const passengerData = {
-      busId,
-      busName,
-      busNumber: busNumber || "Not Provided",
-      from,
-      to,
-      time: time || "Not Provided",
-      travelDate,
-      seatNumber,
-      username: name,
-      phone,
-      age,
-      gender,
-      price,
-      totalPrice: selectedSeats.length * price,
-      bookingTime: new Date(),
-      userId: user?.uid || null,
-      bookingDate: new Date().toLocaleDateString(),
-    };
-
-    setPassengers([...passengers, passengerData]);
-
-    if (currentIndex + 1 < selectedSeats.length) {
-      setCurrentIndex(currentIndex + 1);
-      setName("");
-      setPhone("");
-      setAge("");
-      setGender(""); // Reset gender to force re-selection
-    } else {
-      try {
-        for (let passenger of [...passengers, passengerData]) {
-          await addDoc(collection(db, "Booking"), passenger);
-        }
-
-        Alert.alert("Success", "Booking confirmed for all passengers!");
-        navigation.navigate("MainTab", {
-          screen: "BottomTabs",
-        });
-      } catch (error) {
-        console.error("Error saving booking:", error);
-        Alert.alert("Error", "Something went wrong while saving booking.");
-      }
-    }
+  const passengerData = {
+    busId,
+    busName,
+    busNumber: busNumber || "Not Provided",
+    from,
+    to,
+    time: time || "Not Provided",
+    travelDate,
+    seatNumber,
+    username: name,
+    phone,
+    age,
+    gender,
+    price,
+    totalPrice: selectedSeats.length * price,
+    bookingTime: new Date(),
+    userId: user?.uid || null,
+    bookingDate: new Date().toLocaleDateString(),
   };
+
+  setPassengers([...passengers, passengerData]);
+
+  if (currentIndex + 1 < selectedSeats.length) {
+    setCurrentIndex(currentIndex + 1);
+    setName("");
+    setPhone("");
+    setAge("");
+    setGender(""); // Reset gender to force re-selection
+  } else {
+    try {
+      for (let passenger of [...passengers, passengerData]) {
+        await addDoc(collection(db, "Booking"), passenger);
+      }
+
+      // Direct navigation to Payment screen with bookingData, no alerts
+     navigation.navigate("Payment", {
+  bookingData: {
+    selectedSeats,
+    travelDate,
+    from,
+    to,
+    busName,
+    busNumber,
+    time,
+    price,
+    busId,
+    passengers: [...passengers, passengerData],
+    totalPrice: bookingData.totalPrice, // Pass totalPrice here as well!
+  },
+});
+    } catch (error) {
+      console.error("Error saving booking:", error);
+      Alert.alert("Error", "Something went wrong while saving booking.");
+    }
+  }
+};
 
   return (
     <View style={styles.container}>
@@ -207,7 +218,11 @@ const TicketFormScreen = () => {
       </View>
 
       <Button
-        title={currentIndex + 1 < selectedSeats.length ? "Next" : "Confirm Booking"}
+        title={
+          currentIndex + 1 < selectedSeats.length
+            ? "Next"
+            : "Proceed to Payment"
+        }
         onPress={handleSubmit}
         color="#800080"
       />

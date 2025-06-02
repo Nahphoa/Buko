@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Alert,
   ScrollView,
+  RefreshControl,
 } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
@@ -23,6 +24,7 @@ export default function AdminSignup({ navigation }) {
   const [source, setSource] = useState('');
   const [destination, setDestination] = useState('');
   const [adminKey, setAdminKey] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
 
   const handleSignup = async () => {
     if (
@@ -74,9 +76,27 @@ export default function AdminSignup({ navigation }) {
     }
   };
 
+  const onRefresh = () => {
+    setRefreshing(true);
+    setUsername('');
+    setEmail('');
+    setPassword('');
+    setShowPassword(false);
+    setGender('');
+    setPhoneNumber('');
+    setSource('');
+    setDestination('');
+    setAdminKey('');
+    setTimeout(() => setRefreshing(false), 1000); // Optional delay
+  };
+
   return (
     <View style={styles.container}>
-      <ScrollView>
+      <ScrollView
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         <Text style={styles.header}>Admin Signup</Text>
 
         <View style={styles.inputContainer}>

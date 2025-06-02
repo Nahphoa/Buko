@@ -83,47 +83,6 @@ const Bookyseat = ({ route }) => {
     );
   };
 
-  const handleBookNow = async () => {
-    if (selectedSeats.length === 0) {
-      Alert.alert("No Seats Selected", "Please select at least one seat.");
-      return;
-    }
-
-    const user = auth.currentUser;
-
-    const bookingData = {
-      busName,
-      busId,
-      from,
-      to,
-      travelDate,
-      price,
-      time,
-      busNumber: busNumber|| null,
-      selectedSeats,
-      totalPrice: selectedSeats.length * price,
-      userId: user?.uid || "guest",
-      createdAt: serverTimestamp(),
-      status: "confirmed",
-    };
-
-    try {
-      await addDoc(collection(db, "Booking"), bookingData);
-
-      if (!user) {
-        navigation.navigate("SignUp", {
-          redirectTo: "TicketForm",
-          bookingData,
-        });
-      } else {
-        navigation.navigate("TicketForm", { bookingData });
-      }
-    } catch (error) {
-      console.error("Booking save failed:", error);
-      Alert.alert("Booking Failed", "Please try again.");
-    }
-  };
-
   const renderSeat = (seatNumber) => {
     const isReserved = reservedSeats.includes(seatNumber);
     const isSelected = selectedSeats.includes(seatNumber);
@@ -147,6 +106,7 @@ const Bookyseat = ({ route }) => {
     );
   };
 
+  // === FIX: add this missing function ===
   const generateSeats = () => {
     const rows = [];
     let seat = 1;
@@ -179,6 +139,47 @@ const Bookyseat = ({ route }) => {
     }
 
     return rows;
+  };
+
+  const handleBookNow = async () => {
+    if (selectedSeats.length === 0) {
+      Alert.alert("No Seats Selected", "Please select at least one seat.");
+      return;
+    }
+
+    const user = auth.currentUser;
+
+    const bookingData = {
+      busName,
+      busId,
+      from,
+      to,
+      travelDate,
+      price,
+      time,
+      busNumber: busNumber || null,
+      selectedSeats,
+      totalPrice: selectedSeats.length * price,
+      userId: user?.uid || "guest",
+      createdAt: serverTimestamp(),
+      status: "confirmed",
+    };
+
+    try {
+      await addDoc(collection(db, "Booking"), bookingData);
+
+      if (!user) {
+        navigation.navigate("SignUp", {
+          redirectTo: "TicketForm",
+          bookingData,
+        });
+      } else {
+        navigation.navigate("TicketForm", { bookingData });
+      }
+    } catch (error) {
+      console.error("Booking save failed:", error);
+      Alert.alert("Booking Failed", "Please try again.");
+    }
   };
 
   if (loading) {
